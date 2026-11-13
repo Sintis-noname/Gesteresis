@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GESTERESIS — Edge AI Predictive Diagnostics</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            slate: {
+              850: '#151e2e',
+              900: '#0f172a',
+              950: '#090d16',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Инженерная сетка на фоне и кастомные скроллбары */
+    body {
+      background-color: #090d16;
+      background-image:
+        radial-gradient(rgba(56, 189, 248, 0.06) 1px, transparent 0),
+        radial-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 0);
+      background-size: 24px 24px;
+      background-position: 0 0, 12px 12px;
+      color: #e2e8f0;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    @keyframes pulse-border {
+      0%, 100% { border-color: rgba(239, 68, 68, 0.85); box-shadow: 0 0 18px rgba(239, 68, 68, 0.18); }
+      50% { border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 0 4px rgba(239, 68, 68, 0.05); }
+    }
+    .alarm-card-pulse {
+      animation: pulse-border 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- ==================== TOP NAVBAR ==================== -->
+  <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/90">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-wrap items-center justify-between gap-4 py-3.5">
+
+        <!-- Логотип и название -->
+        <a href="#/" class="flex items-center gap-3 group focus:outline-none">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 flex items-center justify-center shadow-inner group-hover:border-cyan-400 transition">
+            <!-- Иконка осциллограммы / чипа -->
+            <svg class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 12h1.5l1-3 2 6 1-3H15" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-mono font-bold text-lg tracking-wider text-white">GESTERESIS</span>
+              <span class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">v0.3 Edge AI</span>
+            </div>
+            <p class="text-xs text-slate-400">Edge AI Predictive Diagnostics</p>
+          </div>
+        </a>
+
+        <!-- Блок подписки (Дата окончания + Кнопка оплаты) -->
+        <div class="flex flex-wrap items-center gap-3 bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2">
+          <div class="flex items-center gap-2">
+            <span id="sub-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <div class="text-xs">
+              <span class="text-slate-400 block sm:inline">Подписка активна до: </span>
+              <span id="sub-expiry-date" class="font-mono font-semibold text-slate-100">Загрузка...</span>
+            </div>
+          </div>
+          <button id="btn-open-sub-modal" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-sm shadow-amber-500/20 transition cursor-pointer">
+            Оплатить подписку
+          </button>
+        </div>
+
+        <!-- Блок управления потоком и авторизации -->
+        <div class="flex items-center gap-2.5">
+          <!-- Кнопка Play/Pause симуляции потока 5 сек -->
+          <button id="btn-toggle-stream" type="button" title="Управление потоком телеметрии (интервал 5 сек)" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 transition cursor-pointer">
+            <span id="stream-indicator" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span id="stream-label">LIVE (5s)</span>
+          </button>
+
+          <!-- Контейнер кнопок авторизации (рендерится динамически) -->
+          <div id="auth-controls" class="flex items-center gap-2">
+            <button id="btn-open-login" type="button" class="px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer">
+              Войти
+            </button>
+            <button id="btn-open-register" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm shadow-cyan-500/20 transition cursor-pointer">
+              Регистрация
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== TOAST / NOTIFICATION CONTAINER ==================== -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- ==================== MAIN CONTENT (SPA VIEWPORT) ==================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Индикатор загрузки приложения -->
+    <div id="global-loader" class="hidden py-20 flex flex-col items-center justify-center text-slate-400">
+      <div class="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin mb-3"></div>
+      <p class="font-mono text-sm">Подключение к брокеру телеметрии Gesteresis...</p>
+    </div>
+
+    <!-- VIEW 1: ОСНОВНОЙ ДАШБОРД ЧИПОВ -->
+    <section id="view-dashboard" class="space-y-6">
+
+      <!-- Панель сводных KPI -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Всего узлов ESP32</span>
+            <span class="p-1.5 rounded-lg bg-slate-800 text-cyan-400 font-mono text-xs">MCU</span>
+          </div>
+          <div id="kpi-total" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-white">0</div>
+          <p class="mt-1 text-xs text-slate-500">Топик: <code class="text-slate-400">p11/gesteresis/+</code></p>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">В норме (OK)</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+          </div>
+          <div id="kpi-ok" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-emerald-400">0</div>
+          <p class="mt-1 text-xs text-slate-500">D_m ≤ threshold</p>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Тревога (ALARM)</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+          </div>
+          <div id="kpi-alarm" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-rose-400">0</div>
+          <p class="mt-1 text-xs text-slate-500">Превышение порога D_m</p>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Калибровка / Ошибки</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+          </div>
+          <div id="kpi-warn" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-amber-400">0</div>
+          <p class="mt-1 text-xs text-slate-500">CALIBRATING / FAULT / Flags</p>
+        </div>
+      </div>
+
+      <!-- Заголовок списка чипов + кнопка добавления нового чипа -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold text-white">Мониторинг узлов диагностики (ESP32-S3)</h1>
+          <p class="text-xs sm:text-sm text-slate-400">Расстояние Махаланобиса D_m в реальном времени, фильтр Калмана (1D) и управление моделями NVS</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="backend-mode-badge" class="px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-900 border border-slate-700 text-slate-400">
+            MODE: MOCK_STREAM
+          </span>
+          <button id="btn-add-chip" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 transition cursor-pointer">
+            + Добавить чип
+          </button>
+        </div>
+      </div>
+
+      <!-- Сетка карточек чипов -->
+      <div id="devices-grid" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <!-- Карточки чипов рендерятся через JS -->
+      </div>
+
+    </section>
+
+    <!-- VIEW 2: СТРАНИЦА ДЕТАЛЬНОЙ ИНФОРМАЦИИ О ЧИПЕ (ЗАГЛУШКА ПОД БЭКЕНД) -->
+    <section id="view-device-detail" class="hidden space-y-6">
+      <!-- Рендерится динамически при переходе на #/device/{id} -->
+    </section>
+
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="border-t border-slate-800/80 bg-slate-950/70 py-4 mt-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 font-mono">
+      <div>GESTERESIS EDGE AI SYSTEM • PROTOCOL v0.3 (ADR-0003 / ADR-0004)</div>
+      <div>CALIBRATION BLOB: 644 BYTES (NVS) • DIM: 12 FEATURES</div>
+    </div>
+  </footer>
+
+  <!-- ==================== MODAL: НАСТРОЙКИ ЧИПА (MQTT CMD) ==================== -->
+  <div id="modal-settings" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <span>Настройки и команды устройства</span>
+            <span id="settings-device-id-badge" class="px-2 py-0.5 text-xs font-mono rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">unit_001</span>
+          </h3>
+          <p class="text-xs text-slate-400 font-mono mt-0.5">Топик команд: p11/gesteresis/<span id="settings-topic-id">unit_001</span>/cmd</p>
+        </div>
+        <button type="button" data-close-modal="modal-settings" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-5">
+        <!-- Переименование узла (метаданные сервера) -->
+        <form id="form-device-meta" class="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+          <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Метаданные узла (БД сервера)</div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input id="input-device-name" type="text" required placeholder="Название агрегата" class="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+            <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition cursor-pointer">
+              Сохранить имя
+            </button>
+          </div>
+        </form>
+
+        <!-- Команды SET_THRESHOLD и SET_RPM -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form id="form-cmd-threshold" class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <label for="input-cmd-threshold" class="text-xs font-semibold text-slate-300">Порог D_m (threshold)</label>
+              <span class="text-[11px] font-mono text-cyan-400">SET_THRESHOLD</span>
+            </div>
+            <input id="input-cmd-threshold" type="number" step="0.1" min="0.5" max="50" required class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-cyan-500" />
+            <button type="submit" class="w-full py-2 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition cursor-pointer">
+              Применить порог (NVS)
+            </button>
+          </form>
+
+          <form id="form-cmd-rpm" class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <label for="input-cmd-rpm" class="text-xs font-semibold text-slate-300">Номинал RPM</label>
+              <span class="text-[11px] font-mono text-cyan-400">SET_RPM</span>
+            </div>
+            <input id="input-cmd-rpm" type="number" step="10" min="0" max="30000" required class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-cyan-500" />
+            <button type="submit" class="w-full py-2 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition cursor-pointer">
+              Обновить RPM (бины 9,10)
+            </button>
+          </form>
+        </div>
+
+        <!-- Калибровка CALIBRATE (ADR-0004: MCU-first + Server refinement) -->
+        <form id="form-cmd-calibrate" class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-xs font-semibold text-slate-200">Автономная калибровка модели (A1 MCU-first)</div>
+              <p class="text-[11px] text-slate-400">Сбор нормальных окон, расчёт µ, S⁻¹, threshold и запись CalibrationBlob</p>
+            </div>
+            <span class="text-[11px] font-mono text-amber-400">CALIBRATE</span>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <div class="flex items-center gap-2 flex-1">
+              <label for="input-calib-duration" class="text-xs text-slate-400 whitespace-nowrap">Длительность (сек):</label>
+              <input id="input-calib-duration" type="number" min="5" max="300" value="30" required class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-amber-500" />
+            </div>
+            <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer">
+              Запустить калибровку
+            </button>
+          </div>
+        </form>
+
+        <!-- Системные команды CLEAR_FAULT / RESET -->
+        <div class="grid grid-cols-2 gap-3">
+          <button id="btn-cmd-clear-fault" type="button" class="py-2.5 px-3 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition cursor-pointer">
+            CLEAR_FAULT (Сброс latch)
+          </button>
+          <button id="btn-cmd-reset" type="button" class="py-2.5 px-3 rounded-xl text-xs font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition cursor-pointer">
+            RESET (Перезагрузка ESP32)
+          </button>
+        </div>
+
+        <!-- Лог ответов устройства (model_ack / status) -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>ЛОГ ОТВЕТОВ УСТРОЙСТВА (model_ack / status)</span>
+            <button id="btn-clear-cmd-log" type="button" class="text-slate-500 hover:text-slate-300 cursor-pointer">Очистить</button>
+          </div>
+          <pre id="settings-cmd-log" class="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[11px] text-emerald-400 max-h-32 overflow-y-auto whitespace-pre-wrap">Ожидание команд...</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: ОПЛАТА ПОДПИСКИ ==================== -->
+  <div id="modal-subscription" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
+        <div>
+          <h3 class="text-base font-bold text-white">Управление подпиской Gesteresis Cloud</h3>
+          <p class="text-xs text-slate-400">Продление доступа к MQTT-брокеру, телеметрии и Server-Refinement (A2)</p>
+        </div>
+        <button type="button" data-close-modal="modal-subscription" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <span class="text-xs text-slate-400">Текущая дата окончания:</span>
+          <span id="modal-sub-current-date" class="font-mono text-sm font-bold text-amber-400">—</span>
+        </div>
+
+        <div class="space-y-2.5" id="subscription-plans-list">
+          <label class="flex items-center justify-between p-3.5 rounded-xl border border-slate-700 bg-slate-950/50 hover:border-cyan-500/60 cursor-pointer transition">
+            <div class="flex items-center gap-3">
+              <input type="radio" name="sub_plan" value="plan_1m" checked class="accent-cyan-500 w-4 h-4" />
+              <div>
+                <div class="text-sm font-semibold text-white">Базовый цех — 1 месяц (+30 дней)</div>
+                <div class="text-xs text-slate-400">До 5 чипов ESP32-S3, телеметрия и хранение логов</div>
+              </div>
+            </div>
+            <span class="font-mono font-bold text-cyan-400 text-sm">4 900 ₽</span>
+          </label>
+
+          <label class="flex items-center justify-between p-3.5 rounded-xl border border-slate-700 bg-slate-950/50 hover:border-cyan-500/60 cursor-pointer transition">
+            <div class="flex items-center gap-3">
+              <input type="radio" name="sub_plan" value="plan_6m" class="accent-cyan-500 w-4 h-4" />
+              <div>
+                <div class="text-sm font-semibold text-white">Промышленный — 6 месяцев (+180 дней)</div>
+                <div class="text-xs text-slate-400">До 25 чипов, Server-refinement моделей (NumPy), режим аудита C</div>
+              </div>
+            </div>
+            <span class="font-mono font-bold text-cyan-400 text-sm">24 900 ₽</span>
+          </label>
+
+          <label class="flex items-center justify-between p-3.5 rounded-xl border border-slate-700 bg-slate-950/50 hover:border-cyan-500/60 cursor-pointer transition">
+            <div class="flex items-center gap-3">
+              <input type="radio" name="sub_plan" value="plan_12m" class="accent-cyan-500 w-4 h-4" />
+              <div>
+                <div class="text-sm font-semibold text-white">Корпоративный — 12 месяцев (+365 дней)</div>
+                <div class="text-xs text-slate-400">Безлимит узлов, OTA-раздача прошивок, приоритетная поддержка</div>
+              </div>
+            </div>
+            <span class="font-mono font-bold text-cyan-400 text-sm">44 900 ₽</span>
+          </label>
+        </div>
+
+        <button id="btn-confirm-payment" type="button" class="w-full py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-lg shadow-amber-500/20 transition cursor-pointer">
+          Перейти к оплате и продлить подписку
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: АВТОРИЗАЦИЯ (ВХОД) ==================== -->
+  <div id="modal-login" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
+        <h3 class="text-base font-bold text-white">Вход в систему Gesteresis</h3>
+        <button type="button" data-close-modal="modal-login" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="form-login" class="p-5 space-y-4">
+        <div>
+          <label for="login-email" class="block text-xs font-medium text-slate-300 mb-1">Рабочий Email</label>
+          <input id="login-email" type="email" required value="engineer@plant-p11.ru" placeholder="engineer@company.ru" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+        <div>
+          <label for="login-password" class="block text-xs font-medium text-slate-300 mb-1">Пароль</label>
+          <input id="login-password" type="password" required value="••••••••" placeholder="Введите пароль" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+        <div id="login-error" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 p-2.5 rounded-lg"></div>
+        <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition cursor-pointer">
+          Войти в панель управления
+        </button>
+        <p class="text-center text-xs text-slate-400">
+          Нет аккаунта? <button type="button" id="switch-to-register" class="text-cyan-400 hover:underline cursor-pointer">Зарегистрировать предприятие</button>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: РЕГИСТРАЦИЯ ==================== -->
+  <div id="modal-register" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
+        <h3 class="text-base font-bold text-white">Регистрация в Gesteresis</h3>
+        <button type="button" data-close-modal="modal-register" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="form-register" class="p-5 space-y-4">
+        <div>
+          <label for="reg-company" class="block text-xs font-medium text-slate-300 mb-1">Предприятие / Цех</label>
+          <input id="reg-company" type="text" required placeholder="ООО «ПромСтанкоСервис»" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+        <div>
+          <label for="reg-email" class="block text-xs font-medium text-slate-300 mb-1">Email инженера / администратора</label>
+          <input id="reg-email" type="email" required placeholder="admin@plant.ru" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+        <div>
+          <label for="reg-password" class="block text-xs font-medium text-slate-300 mb-1">Пароль (минимум 6 символов)</label>
+          <input id="reg-password" type="password" minlength="6" required placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+        <div id="register-error" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 p-2.5 rounded-lg"></div>
+        <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition cursor-pointer">
+          Создать аккаунт
+        </button>
+        <p class="text-center text-xs text-slate-400">
+          Уже зарегистрированы? <button type="button" id="switch-to-login" class="text-cyan-400 hover:underline cursor-pointer">Войти</button>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: ДОБАВИТЬ НОВЫЙ ЧИП ==================== -->
+  <div id="modal-add-chip" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
+        <h3 class="text-base font-bold text-white">Регистрация нового узла ESP32-S3</h3>
+        <button type="button" data-close-modal="modal-add-chip" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="form-add-chip" class="p-5 space-y-4">
+        <div>
+          <label for="new-chip-id" class="block text-xs font-medium text-slate-300 mb-1">ID устройства (MQTT топик)</label>
+          <input id="new-chip-id" type="text" required pattern="[a-zA-Z0-9_-]+" placeholder="unit_006" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+        <div>
+          <label for="new-chip-name" class="block text-xs font-medium text-slate-300 mb-1">Название станка / узла</label>
+          <input id="new-chip-name" type="text" required placeholder="Шлифовальный станок #3" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="new-chip-rpm" class="block text-xs font-medium text-slate-300 mb-1">Номинал RPM</label>
+            <input id="new-chip-rpm" type="number" value="1500" min="0" max="30000" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-cyan-500" />
+          </div>
+          <div>
+            <label for="new-chip-threshold" class="block text-xs font-medium text-slate-300 mb-1">Порог D_m</label>
+            <input id="new-chip-threshold" type="number" step="0.1" value="3.5" min="0.5" max="50" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-cyan-500" />
+          </div>
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition cursor-pointer">
+          Подключить устройство
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== APPLICATION JAVASCRIPT ==================== -->
+  <script>
+    /**
+     * ============================================================================
+     * 1. КОНФИГУРАЦИЯ И КОНСТАНТЫ КОНТРАКТА (docs/interfaces.md v0.3)
+     * ============================================================================
+     */
+    const APP_CONFIG = {
+      // Переключите в false, когда поднимете реальный REST / WebSocket бэкенд
+      USE_MOCK_DATA: true,
+      API_BASE_URL: 'http://localhost:8000/api/v1',
+      WS_URL: 'ws://localhost:8000/ws/telemetry',
+      TELEMETRY_INTERVAL_MS: 5000, // Период телеметрии по контракту §2 и §8 (5000 мс)
+      MAX_HISTORY_POINTS: 36,      // 3 минуты истории при шаге 5 сек
+    };
+
+    /**
+     * Битовая маска кодов ошибок и диагностических флагов (interfaces.md §7.2)
+     */
+    const FAULT_CODES = [
+      { mask: 0x0001, name: 'SENSOR_FROZEN',         label: 'Сигнал не меняется > 2с',        severity: 'fault' },
+      { mask: 0x0002, name: 'SENSOR_NOISE_ZERO',     label: 'Нулевая дисперсия (обрыв)',      severity: 'fault' },
+      { mask: 0x0004, name: 'SENSOR_OUT_OF_RANGE',   label: 'Выход за ±16 g',                 severity: 'fault' },
+      { mask: 0x0008, name: 'WIFI_DOWN',             label: 'Wi-Fi отключён > 30с',           severity: 'warn'  },
+      { mask: 0x0010, name: 'NVS_CORRUPT',           label: 'Ошибка CRC/magic в NVS',         severity: 'fault' },
+      { mask: 0x0020, name: 'MQTT_DOWN',             label: 'MQTT отключён > 60с',            severity: 'warn'  },
+      { mask: 0x0040, name: 'OTA_IN_PROGRESS',       label: 'Идёт OTA-обновление',            severity: 'info'  },
+      { mask: 0x0080, name: 'MODEL_ILL_CONDITIONED', label: 'Плохая обусловленность S (A1)',  severity: 'diag'  },
+      { mask: 0x0100, name: 'MODEL_DEGENERATE',      label: 'Вырожденная матрица S (trace≈0)',severity: 'diag'  },
+      { mask: 0x0200, name: 'CALIB_REJECTED',        label: 'Серверная модель отклонена (A2)',severity: 'diag'  },
+    ];
+
+    /**
+     * 12 признаков вектора x[12] (interfaces.md §1) — для страницы детальной информации
+     */
+    const FEATURE_SCHEMA_X12 = [
+      { idx: 0,  key: 'rms_x',     desc: 'RMS по оси X',                        unit: 'g'  },
+      { idx: 1,  key: 'rms_y',     desc: 'RMS по оси Y',                        unit: 'g'  },
+      { idx: 2,  key: 'rms_z',     desc: 'RMS по оси Z',                        unit: 'g'  },
+      { idx: 3,  key: 'cf_x',      desc: 'Crest Factor по оси X (Peak / RMS)',  unit: '—'  },
+      { idx: 4,  key: 'cf_y',      desc: 'Crest Factor по оси Y',               unit: '—'  },
+      { idx: 5,  key: 'cf_z',      desc: 'Crest Factor по оси Z',               unit: '—'  },
+      { idx: 6,  key: 'kurt_x',    desc: 'Kurtosis по оси X',                   unit: '—'  },
+      { idx: 7,  key: 'kurt_y',    desc: 'Kurtosis по оси Y',                   unit: '—'  },
+      { idx: 8,  key: 'kurt_z',    desc: 'Kurtosis по оси Z',                   unit: '—'  },
+      { idx: 9,  key: 'amp_1x',    desc: 'Амплитуда в бине 1×RPM',              unit: 'g'  },
+      { idx: 10, key: 'amp_2_3x',  desc: 'Сумма амплитуд в бинах 2× и 3×RPM',   unit: 'g'  },
+      { idx: 11, key: 'energy_hf', desc: 'Энергия в полосе 2–5 кГц',            unit: 'g²' },
+    ];
+
+    function decodeFaultMask(faultCode) {
+      if (!faultCode || faultCode === 0) return [];
+      return FAULT_CODES.filter(fc => (faultCode & fc.mask) !== 0);
+    }
+
+    /**
+     * ============================================================================
+     * 2. СЛОЙ РАБОТЫ С API (ApiService / DataProvider)
+     * ============================================================================
+     * Все методы возвращают Promise и изолируют транспорт (Mock vs REST/WS).
+     * Чтобы подключить реальный бэкенд:
+     * 1. Установите APP_CONFIG.USE_MOCK_DATA = false
+     * 2. Укажите APP_CONFIG.API_BASE_URL и APP_CONFIG.WS_URL
+     */
+    class ApiService {
+      constructor(config) {
+        this.config = config;
+        this.token = localStorage.getItem('gesteresis_token') || 'mock-jwt-token';
+        this.wsConnections = new Map();
+        this._initMockState();
+      }
+
+      /**
+       * Инициализация реалистичных мок-данных по контракту interfaces.md
+       */
+      _initMockState() {
+        const savedUser = localStorage.getItem('gesteresis_mock_user');
+        this.mockUser = savedUser
+          ? JSON.parse(savedUser)
+          : { id: 'usr-101', email: 'engineer@plant-p11.ru', company: 'Цех №11 • Механообработка' };
+
+        const savedSub = localStorage.getItem('gesteresis_mock_sub');
+        this.mockSubscription = savedSub
+          ? JSON.parse(savedSub)
+          : {
+              planName: 'Промышленный (до 25 узлов)',
+              expiresAt: new Date(Date.now() + 32 * 24 * 3600 * 1000).toISOString(), // +32 дня от текущей даты
+              isActive: true,
+            };
+
+        const nowSec = Math.floor(Date.now() / 1000);
+
+        // 3 демонстрационных чипа ESP32-S3 с разными состояниями
+        this.mockDevices = [
+          {
+            id: 'unit_001',
+            name: 'Токарный станок ЧПУ #1 (Шпиндель)',
+            threshold: 3.5,
+            nominal_rpm: 1500,
+            model_source: 'SERVER', // A2 Server-refinement применён
+            cond_number: 412.8,
+            telemetry: {
+              id: 'unit_001',
+              ts: nowSec,
+              d_m: 1.84,
+              d_m_filtered: 1.79,
+              status: 'OK',
+              rms: 0.042,
+              fault_code: 0x0000,
+              fw: '0.3.1',
+            },
+            history: this._generateInitialHistory(nowSec, 1.75, 0.25, 3.5, 'OK'),
+          },
+          {
+            id: 'unit_002',
+            name: 'Фрезерный узел B-4 (Подшипник опоры)',
+            threshold: 3.5,
+            nominal_rpm: 2400,
+            model_source: 'MCU', // A1 MCU-first
+            cond_number: 1840.2,
+            telemetry: {
+              id: 'unit_002',
+              ts: nowSec,
+              d_m: 4.38,
+              d_m_filtered: 4.19,
+              status: 'ALARM',
+              rms: 0.168,
+              fault_code: 0x0000,
+              fw: '0.3.1',
+            },
+            history: this._generateInitialHistory(nowSec, 4.1, 0.35, 3.5, 'ALARM'),
+          },
+          {
+            id: 'unit_005',
+            name: 'Компрессорная станция #2 (Винтовой блок)',
+            threshold: 3.2,
+            nominal_rpm: 0, // nominal_rpm = 0 -> бины 9,10 = 0 (валидное состояние, ADR-0004)
+            model_source: 'MCU',
+            cond_number: 2.4e10,
+            telemetry: {
+              id: 'unit_005',
+              ts: nowSec,
+              d_m: 2.15,
+              d_m_filtered: 2.12,
+              status: 'CALIBRATING',
+              rms: 0.031,
+              fault_code: 0x0080, // MODEL_ILL_CONDITIONED (диагностический флаг)
+              fw: '0.3.0',
+            },
+            history: this._generateInitialHistory(nowSec, 2.1, 0.18, 3.2, 'CALIBRATING'),
+          },
+        ];
+      }
+
+      _generateInitialHistory(nowSec, baseDm, jitter, threshold, status) {
+        const points = [];
+        let filtered = baseDm;
+        for (let i = APP_CONFIG.MAX_HISTORY_POINTS - 1; i >= 0; i--) {
+          const ts = nowSec - i * 5;
+          // Для ALARM делаем плавный рост выше порога на последних точках
+          const trend = status === 'ALARM' ? (APP_CONFIG.MAX_HISTORY_POINTS - i) * 0.035 : 0;
+          const raw = Math.max(0.2, +(baseDm - 0.6 + trend + (Math.random() - 0.48) * jitter * 2).toFixed(3));
+          // 1D фильтр Калмана (упрощённая симуляция сглаживания)
+          filtered = +(filtered + 0.32 * (raw - filtered)).toFixed(3);
+          points.push({ ts, d_m: raw, d_m_filtered: filtered });
+        }
+        return points;
+      }
+
+      async _request(endpoint, options = {}) {
+        const headers = {
+          'Content-Type': 'application/json',
+          ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+          ...(options.headers || {}),
+        };
+        const response = await fetch(`${this.config.API_BASE_URL}${endpoint}`, {
+          ...options,
+          headers,
+        });
+        if (!response.ok) {
+          const errPayload = await response.json().catch(() => ({}));
+          throw new Error(errPayload.detail || errPayload.message || `HTTP ${response.status}`);
+        }
+        return response.json();
+      }
+
+      _delay(ms = 220) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      // -------------------- АВТОРИЗАЦИЯ И ПОЛЬЗОВАТЕЛЬ --------------------
+
+      async getCurrentUser() {
+        if (!this.config.USE_MOCK_DATA) {
+          return this._request('/auth/me');
+        }
+        await this._delay(120);
+        return this.mockUser;
+      }
+
+      async login(email, password) {
+        if (!this.config.USE_MOCK_DATA) {
+          const res = await this._request('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+          });
+          this.token = res.access_token;
+          localStorage.setItem('gesteresis_token', this.token);
+          return res.user;
+        }
+        await this._delay(300);
+        if (!email || !password) throw new Error('Укажите email и пароль');
+        this.mockUser = { id: 'usr-101', email, company: 'Цех №11 • Механообработка' };
+        localStorage.setItem('gesteresis_mock_user', JSON.stringify(this.mockUser));
+        return this.mockUser;
+      }
+
+      async register(email, password, company) {
+        if (!this.config.USE_MOCK_DATA) {
+          const res = await this._request('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ email, password, company }),
+          });
+          this.token = res.access_token;
+          localStorage.setItem('gesteresis_token', this.token);
+          return res.user;
+        }
+        await this._delay(350);
+        if (!email || password.length < 6) throw new Error('Пароль должен быть не короче 6 символов');
+        this.mockUser = { id: 'usr-' + Math.floor(Math.random() * 900 + 100), email, company };
+        localStorage.setItem('gesteresis_mock_user', JSON.stringify(this.mockUser));
+        return this.mockUser;
+      }
+
+      async logout() {
+        if (!this.config.USE_MOCK_DATA) {
+          await this._request('/auth/logout', { method: 'POST' }).catch(() => {});
+          this.token = null;
+          localStorage.removeItem('gesteresis_token');
+          return true;
+        }
+        await this._delay(120);
+        this.mockUser = null;
+        localStorage.removeItem('gesteresis_mock_user');
+        return true;
+      }
+
+      // -------------------- ПОДПИСКА И ОПЛАТА --------------------
+
+      async getSubscription() {
+        if (!this.config.USE_MOCK_DATA) {
+          return this._request('/billing/subscription');
+        }
+        await this._delay(150);
+        const isActive = new Date(this.mockSubscription.expiresAt).getTime() > Date.now();
+        return { ...this.mockSubscription, isActive };
+      }
+
+      async createPaymentSession(planId) {
+        if (!this.config.USE_MOCK_DATA) {
+          // На реальном бэкенде можно вернуть payment_url или обновлённую подписку
+          return this._request('/billing/checkout', {
+            method: 'POST',
+            body: JSON.stringify({ plan_id: planId }),
+          });
+        }
+        await this._delay(450);
+        const daysMap = { plan_1m: 30, plan_6m: 180, plan_12m: 365 };
+        const namesMap = {
+          plan_1m: 'Базовый цех (до 5 узлов)',
+          plan_6m: 'Промышленный (до 25 узлов)',
+          plan_12m: 'Корпоративный (Безлимит)',
+        };
+        const addDays = daysMap[planId] || 30;
+        const baseTime = Math.max(Date.now(), new Date(this.mockSubscription.expiresAt).getTime());
+        const newExpiry = new Date(baseTime + addDays * 24 * 3600 * 1000).toISOString();
+
+        this.mockSubscription = {
+          planName: namesMap[planId] || 'Промышленный',
+          expiresAt: newExpiry,
+          isActive: true,
+        };
+        localStorage.setItem('gesteresis_mock_sub', JSON.stringify(this.mockSubscription));
+        return this.mockSubscription;
+      }
+
+      // -------------------- УСТРОЙСТВА (ЧИПЫ ESP32-S3) --------------------
+
+      async getDevices() {
+        if (!this.config.USE_MOCK_DATA) {
+          return this._request('/devices');
+        }
+        await this._delay(200);
+        return this.mockDevices;
+      }
+
+      async getDeviceById(deviceId) {
+        if (!this.config.USE_MOCK_DATA) {
+          return this._request(`/devices/${encodeURIComponent(deviceId)}`);
+        }
+        await this._delay(120);
+        const dev = this.mockDevices.find(d => d.id === deviceId);
+        if (!dev) throw new Error(`Устройство ${deviceId} не найдено`);
+        return dev;
+      }
+
+      async addDevice({ id, name, nominal_rpm, threshold }) {
+        if (!this.config.USE_MOCK_DATA) {
+          return this._request('/devices', {
+            method: 'POST',
+            body: JSON.stringify({ id, name, nominal_rpm, threshold }),
+          });
+        }
+        await this._delay(250);
+        if (this.mockDevices.some(d => d.id === id)) {
+          throw new Error(`Устройство с ID "${id}" уже зарегистрировано`);
+        }
+        const nowSec = Math.floor(Date.now() / 1000);
+        const newDev = {
+          id,
+          name,
+          threshold: Number(threshold),
+          nominal_rpm: Number(nominal_rpm),
+          model_source: 'MCU',
+          cond_number: 520.0,
+          telemetry: {
+            id,
+            ts: nowSec,
+            d_m: 1.45,
+            d_m_filtered: 1.42,
+            status: 'OK',
+            rms: 0.035,
+            fault_code: 0x0000,
+            fw: '0.3.1',
+          },
+          history: this._generateInitialHistory(nowSec, 1.45, 0.2, Number(threshold), 'OK'),
+        };
+        this.mockDevices.push(newDev);
+        return newDev;
+      }
+
+      async updateDeviceMeta(deviceId, { name }) {
+        if (!this.config.USE_MOCK_DATA) {
+          return this._request(`/devices/${encodeURIComponent(deviceId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ name }),
+          });
+        }
+        await this._delay(150);
+        const dev = this.mockDevices.find(d => d.id === deviceId);
+        if (!dev) throw new Error('Устройство не найдено');
+        dev.name = name;
+        return dev;
+      }
+
+      async getDeviceTelemetryHistory(deviceId) {
+        if (!this.config.USE_MOCK_DATA) {
+          return this._request(`/devices/${encodeURIComponent(deviceId)}/telemetry`);
+        }
+        const dev = this.mockDevices.find(d => d.id === deviceId);
+        return dev ? dev.history : [];
+      }
+
+      /**
+       * Отправка команды по MQTT контракту (interfaces.md §4)
+       * Топик: p11/gesteresis/{id}/cmd
+       * Payload: { "cmd": "CALIBRATE" | "SET_THRESHOLD" | "SET_RPM" | "CLEAR_FAULT" | "RESET", "params": {...} }
+       */
+      async sendCommand(deviceId, cmd, params = {}) {
+        if (!this.config.USE_MOCK_DATA) {
+          return this._request(`/devices/${encodeURIComponent(deviceId)}/cmd`, {
+            method: 'POST',
+            body: JSON.stringify({ cmd, params }),
+          });
+        }
+        await this._delay(320);
+        const dev = this.mockDevices.find(d => d.id === deviceId);
+        if (!dev) throw new Error(`Устройство ${deviceId} не найдено`);
+
+        const ts = Math.floor(Date.now() / 1000);
+
+        switch (cmd) {
+          case 'SET_THRESHOLD': {
+            const val = Number(params.threshold);
+            if (isNaN(val) || val <= 0) throw new Error('Некорректный порог threshold');
+            dev.threshold = val;
+            // Пересчитываем статус согласно гистерезису (§7.1)
+            if (dev.telemetry.status !== 'SENSOR_FAULT' && dev.telemetry.status !== 'CALIBRATING') {
+              dev.telemetry.status = dev.telemetry.d_m_filtered > val ? 'ALARM' : 'OK';
+            }
+            return { cmd, result: 'OK', source: 'MCU', ts, detail: `Порог ${val} записан в NVS` };
+          }
+
+          case 'SET_RPM': {
+            const rpm = Number(params.nominal_rpm);
+            if (isNaN(rpm) || rpm < 0) throw new Error('Некорректное значение RPM');
+            dev.nominal_rpm = rpm;
+            return { cmd, result: 'OK', source: 'MCU', ts, detail: `nominal_rpm = ${rpm} сохранён в NVS` };
+          }
+
+          case 'CALIBRATE': {
+            if (dev.telemetry.status === 'CALIBRATING') {
+              return { cmd, result: 'BUSY', source: 'MCU', ts, detail: 'Калибровка уже выполняется' };
+            }
+            const duration = Number(params.duration_s) || 30;
+            dev.telemetry.status = 'CALIBRATING';
+            // Имитируем завершение MCU-first калибровки (A1) через 4 секунды для наглядности в UI
+            setTimeout(() => {
+              dev.telemetry.status = 'OK';
+              dev.telemetry.d_m = +(0.95 + Math.random() * 0.4).toFixed(2);
+              dev.telemetry.d_m_filtered = dev.telemetry.d_m;
+              dev.telemetry.fault_code &= ~0x0080; // Снимаем флаг плохой обусловленности
+              dev.model_source = 'MCU';
+            }, 4000);
+            return {
+              cmd,
+              result: 'OK',
+              source: 'MCU',
+              ts,
+              detail: `Запущен сбор окон (${duration}с), расчёт µ, S⁻¹, CalibrationBlob (644 Б)`,
+            };
+          }
+
+          case 'CLEAR_FAULT': {
+            dev.telemetry.fault_code = 0x0000;
+            if (dev.telemetry.status === 'SENSOR_FAULT') {
+              dev.telemetry.status = dev.telemetry.d_m_filtered > dev.threshold ? 'ALARM' : 'OK';
+            }
+            return { cmd, result: 'OK', source: 'MCU', ts, detail: 'Latch ошибок SENSOR_FAULT сброшен' };
+          }
+
+          case 'RESET': {
+            dev.telemetry.status = 'OK';
+            dev.telemetry.d_m = 1.2;
+            dev.telemetry.d_m_filtered = 1.2;
+            return { cmd, result: 'OK', source: 'MCU', ts, detail: 'ESP32-S3 перезагружен, NVS Blob загружен' };
+          }
+
+          default:
+            throw new Error(`Неизвестная команда: ${cmd}`);
+        }
+      }
+
+      /**
+       * Подписка на поток телеметрии в реальном времени (интервал 5 сек, interfaces.md §2)
+       * При USE_MOCK_DATA = false подключается к реальному WebSocket.
+       */
+      subscribeTelemetry(onMessageCallback) {
+        if (!this.config.USE_MOCK_DATA) {
+          const ws = new WebSocket(`${this.config.WS_URL}?token=${encodeURIComponent(this.token || '')}`);
+          ws.onmessage = (event) => {
+            try {
+              const payload = JSON.parse(event.data);
+              onMessageCallback(payload);
+            } catch (e) {
+              console.error('Ошибка парсинга WS телеметрии:', e);
+            }
+          };
+          ws.onerror = (err) => console.error('WebSocket error:', err);
+          return () => ws.close();
+        }
+
+        // Mock-генератор телеметрии раз в 5 секунд для всех зарегистрированных чипов
+        const timerId = setInterval(() => {
+          const nowSec = Math.floor(Date.now() / 1000);
+
+          this.mockDevices.forEach((dev) => {
+            const prev = dev.telemetry;
+            let rawDm;
+
+            if (prev.status === 'ALARM') {
+              // Колебания выше порога threshold
+              rawDm = +(dev.threshold + 0.35 + (Math.random() - 0.35) * 0.9).toFixed(2);
+            } else if (prev.status === 'CALIBRATING') {
+              rawDm = +(1.8 + (Math.random() - 0.5) * 0.4).toFixed(2);
+            } else {
+              // Нормальная работа ниже порога, с редкими микро-всплесками
+              const spike = Math.random() > 0.88 ? 0.65 : 0;
+              rawDm = +(Math.max(0.4, (dev.threshold * 0.5) + (Math.random() - 0.5) * 0.55 + spike)).toFixed(2);
+            }
+
+            // 1D фильтр Калмана сглаживает скачки rawDm
+            const filteredDm = +(prev.d_m_filtered + 0.35 * (rawDm - prev.d_m_filtered)).toFixed(2);
+            const rms = +(0.03 + filteredDm * 0.025 + (Math.random() - 0.5) * 0.008).toFixed(3);
+
+            // Логика гистерезиса переходов OK <-> ALARM (interfaces.md §7.1)
+            let nextStatus = prev.status;
+            if (prev.status === 'OK' && filteredDm > dev.threshold) {
+              nextStatus = 'ALARM';
+            } else if (prev.status === 'ALARM' && filteredDm < dev.threshold * 0.8) {
+              nextStatus = 'OK';
+            }
+
+            dev.telemetry = {
+              ...prev,
+              ts: nowSec,
+              d_m: rawDm,
+              d_m_filtered: filteredDm,
+              status: nextStatus,
+              rms,
+            };
+
+            dev.history.push({ ts: nowSec, d_m: rawDm, d_m_filtered: filteredDm });
+            if (dev.history.length > APP_CONFIG.MAX_HISTORY_POINTS) {
+              dev.history.shift();
+            }
+
+            onMessageCallback(dev);
+          });
+        }, this.config.TELEMETRY_INTERVAL_MS);
+
+        return () => clearInterval(timerId);
+      }
+    }
+
+    /**
+     * ============================================================================
+     * 3. ОТРИСОВКА ИНТЕРАКТИВНОГО CANVAS-ГРАФИКА ДЛЯ КАЖДОГО ЧИПА
+     * ============================================================================
+     */
+    class TelemetryChartRenderer {
+      /**
+       * Рисует график d_m, d_m_filtered, линию threshold и зону гистерезиса (0.8 * threshold)
+       */
+      static draw(canvas, device, hoverIndex = null) {
+        if (!canvas) return;
+        const parent = canvas.parentElement;
+        const dpr = window.devicePixelRatio || 1;
+        const rect = parent.getBoundingClientRect();
+        const width = Math.max(260, rect.width);
+        const height = 190;
+
+        if (canvas.width !== Math.floor(width * dpr) || canvas.height !== Math.floor(height * dpr)) {
+          canvas.width = Math.floor(width * dpr);
+          canvas.height = Math.floor(height * dpr);
+        }
+
+        const ctx = canvas.getContext('2d');
+        ctx.save();
+        ctx.scale(dpr, dpr);
+
+        // Очистка фона
+        ctx.clearRect(0, 0, width, height);
+
+        const pad = { top: 18, right: 16, bottom: 26, left: 40 };
+        const plotW = width - pad.left - pad.right;
+        const plotH = height - pad.top - pad.bottom;
+
+        const history = device.history || [];
+        const threshold = device.threshold || 3.5;
+        const hystLow = threshold * 0.8;
+
+        // Определяем диапазон оси Y
+        let maxVal = threshold * 1.25;
+        history.forEach(p => {
+          if (p.d_m > maxVal) maxVal = p.d_m * 1.12;
+          if (p.d_m_filtered > maxVal) maxVal = p.d_m_filtered * 1.12;
+        });
+        const minVal = 0;
+
+        const getX = (idx) => {
+          if (history.length <= 1) return pad.left;
+          return pad.left + (idx / (history.length - 1)) * plotW;
+        };
+        const getY = (val) => {
+          const ratio = (val - minVal) / (maxVal - minVal || 1);
+          return pad.top + plotH - ratio * plotH;
+        };
+
+        // 1. Опасная зона выше threshold (лёгкая красная заливка)
+        const yThresh = getY(threshold);
+        if (yThresh > pad.top) {
+          ctx.fillStyle = 'rgba(244, 63, 94, 0.08)';
+          ctx.fillRect(pad.left, pad.top, plotW, yThresh - pad.top);
+        }
+
+        // 2. Горизонтальная сетка и подписи оси Y
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
+        ctx.lineWidth = 1;
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+
+        const gridSteps = 4;
+        for (let i = 0; i <= gridSteps; i++) {
+          const val = minVal + ((maxVal - minVal) / gridSteps) * i;
+          const y = getY(val);
+          ctx.beginPath();
+          ctx.moveTo(pad.left, y);
+          ctx.lineTo(pad.left + plotW, y);
+          ctx.stroke();
+          ctx.fillText(val.toFixed(1), pad.left - 6, y);
+        }
+
+        // 3. Линия порога гистерезиса возврата (0.8 * threshold)
+        const yHyst = getY(hystLow);
+        ctx.save();
+        ctx.setLineDash([2, 4]);
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, yHyst);
+        ctx.lineTo(pad.left + plotW, yHyst);
+        ctx.stroke();
+        ctx.restore();
+
+        // 4. Линия порога тревоги (threshold)
+        ctx.save();
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, yThresh);
+        ctx.lineTo(pad.left + plotW, yThresh);
+        ctx.stroke();
+
+        // Бейдж порога справа
+        ctx.fillStyle = '#f43f5e';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(`THR ${threshold.toFixed(1)}`, pad.left + plotW - 2, yThresh - 3);
+        ctx.restore();
+
+        if (history.length > 0) {
+          // 5. Кривая сырого d_m (полупрозрачный голубой)
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+          ctx.lineWidth = 1.5;
+          history.forEach((pt, i) => {
+            const x = getX(i);
+            const y = getY(pt.d_m);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          // 6. Градиентная заливка под кривой Калмана (d_m_filtered)
+          const isAlarm = device.telemetry.status === 'ALARM';
+          const mainColor = isAlarm ? '#fb7185' : '#22d3ee';
+          const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+          grad.addColorStop(0, isAlarm ? 'rgba(244, 63, 94, 0.28)' : 'rgba(34, 211, 238, 0.25)');
+          grad.addColorStop(1, 'rgba(15, 23, 42, 0.0)');
+
+          ctx.beginPath();
+          history.forEach((pt, i) => {
+            const x = getX(i);
+            const y = getY(pt.d_m_filtered);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.lineTo(getX(history.length - 1), pad.top + plotH);
+          ctx.lineTo(getX(0), pad.top + plotH);
+          ctx.closePath();
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          // 7. Основная линия d_m_filtered (фильтр Калмана)
+          ctx.beginPath();
+          ctx.strokeStyle = mainColor;
+          ctx.lineWidth = 2.4;
+          ctx.lineJoin = 'round';
+          history.forEach((pt, i) => {
+            const x = getX(i);
+            const y = getY(pt.d_m_filtered);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          // Точка последнего актуального отсчёта
+          const lastIdx = history.length - 1;
+          const lastX = getX(lastIdx);
+          const lastY = getY(history[lastIdx].d_m_filtered);
+          ctx.beginPath();
+          ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+          ctx.fillStyle = mainColor;
+          ctx.fill();
+          ctx.strokeStyle = '#090d16';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          // 8. Временные метки по оси X
+          ctx.fillStyle = '#64748b';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          const labelIndices = [0, Math.floor(history.length / 2), history.length - 1];
+          labelIndices.forEach((idx) => {
+            if (!history[idx]) return;
+            const d = new Date(history[idx].ts * 1000);
+            const timeStr = d.toTimeString().slice(0, 8);
+            ctx.fillText(timeStr, getX(idx), pad.top + plotH + 7);
+          });
+
+          // 9. Интерактивный курсор (crosshair) при наведении мыши / касании
+          if (hoverIndex !== null && history[hoverIndex]) {
+            const pt = history[hoverIndex];
+            const hx = getX(hoverIndex);
+            const hy = getY(pt.d_m_filtered);
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(226, 232, 240, 0.35)';
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(hx, pad.top);
+            ctx.lineTo(hx, pad.top + plotH);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.beginPath();
+            ctx.arc(hx, hy, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            // Тултип внутри графика
+            const dStr = new Date(pt.ts * 1000).toTimeString().slice(0, 8);
+            const tooltipText = `${dStr} | Kalman: ${pt.d_m_filtered.toFixed(2)} | Raw: ${pt.d_m.toFixed(2)}`;
+            ctx.font = '10px "JetBrains Mono", monospace';
+            const tw = ctx.measureText(tooltipText).width + 14;
+            const tx = Math.min(Math.max(pad.left, hx - tw / 2), pad.left + plotW - tw);
+            const ty = pad.top + 2;
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(tx, ty, tw, 20, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(tooltipText, tx + 7, ty + 10);
+          }
+        }
+
+        ctx.restore();
+      }
+    }
+
+    /**
+     * ============================================================================
+     * 4. КОНТРОЛЛЕР ПРИЛОЖЕНИЯ (UI, РОУТИНГ, СОСТОЯНИЕ)
+     * ============================================================================
+     */
+    class GesteresisApp {
+      constructor() {
+        this.api = new ApiService(APP_CONFIG);
+        this.state = {
+          user: null,
+          subscription: null,
+          devices: [],
+          isStreaming: true,
+          activeSettingsDeviceId: null,
+          hoverIndices: {}, // { [deviceId]: number | null }
+        };
+        this.unsubscribeStream = null;
+      }
+
+      async init() {
+        this._bindGlobalEvents();
+        this._showLoader(true);
+
+        try {
+          const [user, subscription, devices] = await Promise.all([
+            this.api.getCurrentUser(),
+            this.api.getSubscription(),
+            this.api.getDevices(),
+          ]);
+
+          this.state.user = user;
+          this.state.subscription = subscription;
+          this.state.devices = devices;
+
+          this._renderAuthHeader();
+          this._renderSubscriptionHeader();
+          this._updateBackendModeBadge();
+          this._handleRoute();
+          this._startTelemetryStream();
+        } catch (err) {
+          this.showToast(`Ошибка инициализации: ${err.message}`, 'error');
+        } finally {
+          this._showLoader(false);
+        }
+      }
+
+      _showLoader(show) {
+        const loader = document.getElementById('global-loader');
+        const dash = document.getElementById('view-dashboard');
+        if (show) {
+          loader.classList.remove('hidden');
+          dash.classList.add('hidden');
+        } else {
+          loader.classList.add('hidden');
+        }
+      }
+
+      _updateBackendModeBadge() {
+        const badge = document.getElementById('backend-mode-badge');
+        if (APP_CONFIG.USE_MOCK_DATA) {
+          badge.textContent = 'MODE: MOCK_STREAM (READY FOR BACKEND)';
+          badge.className = 'px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-900 border border-slate-700 text-slate-400';
+        } else {
+          badge.textContent = `API: ${APP_CONFIG.API_BASE_URL}`;
+          badge.className = 'px-2.5 py-1.5 rounded-lg text-xs font-mono bg-emerald-950/60 border border-emerald-500/40 text-emerald-400';
+        }
+      }
+
+      // -------------------- ПОДПИСКА --------------------
+
+      _renderSubscriptionHeader() {
+        const sub = this.state.subscription;
+        const dateEl = document.getElementById('sub-expiry-date');
+        const dotEl = document.getElementById('sub-status-dot');
+        if (!sub) return;
+
+        const dt = new Date(sub.expiresAt);
+        const formatted = dt.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        dateEl.textContent = formatted;
+
+        if (sub.isActive) {
+          dotEl.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50';
+          dateEl.className = 'font-mono font-semibold text-emerald-300';
+        } else {
+          dotEl.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping';
+          dateEl.className = 'font-mono font-semibold text-rose-400';
+          dateEl.textContent = `${formatted} (Истекла!)`;
+        }
+      }
+
+      // -------------------- АВТОРИЗАЦИЯ --------------------
+
+      _renderAuthHeader() {
+        const container = document.getElementById('auth-controls');
+        if (this.state.user) {
+          container.innerHTML = `
+            <div class="hidden md:flex flex-col items-end mr-1">
+              <span class="text-xs font-mono font-semibold text-slate-200">${this._escapeHtml(this.state.user.email)}</span>
+              <span class="text-[10px] text-slate-400">${this._escapeHtml(this.state.user.company || 'Инженер')}</span>
+            </div>
+            <button id="btn-logout" type="button" class="px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/40 text-slate-300 border border-slate-700 transition cursor-pointer">
+              Выйти
+            </button>
+          `;
+          document.getElementById('btn-logout').addEventListener('click', async () => {
+            await this.api.logout();
+            this.state.user = null;
+            this._renderAuthHeader();
+            this.showToast('Вы вышли из учётной записи', 'info');
+          });
+        } else {
+          container.innerHTML = `
+            <button id="btn-open-login" type="button" class="px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer">
+              Войти
+            </button>
+            <button id="btn-open-register" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm shadow-cyan-500/20 transition cursor-pointer">
+              Регистрация
+            </button>
+          `;
+          document.getElementById('btn-open-login').addEventListener('click', () => this.openModal('modal-login'));
+          document.getElementById('btn-open-register').addEventListener('click', () => this.openModal('modal-register'));
+        }
+      }
+
+      // -------------------- ПОТОК ТЕЛЕМЕТРИИ --------------------
+
+      _startTelemetryStream() {
+        if (this.unsubscribeStream) {
+          this.unsubscribeStream();
+          this.unsubscribeStream = null;
+        }
+        if (!this.state.isStreaming) return;
+
+        this.unsubscribeStream = this.api.subscribeTelemetry((updatedDevice) => {
+          const idx = this.state.devices.findIndex(d => d.id === updatedDevice.id);
+          if (idx !== -1) {
+            this.state.devices[idx] = updatedDevice;
+          }
+          // Обновляем UI без полного пересоздания DOM карточек для плавности графиков
+          if (!window.location.hash.startsWith('#/device/')) {
+            this._updateKpis();
+            this._patchDeviceCard(updatedDevice);
+          } else {
+            const currentDetailId = decodeURIComponent(window.location.hash.replace('#/device/', ''));
+            if (currentDetailId === updatedDevice.id) {
+              this._renderDeviceDetailPage(updatedDevice.id);
+            }
+          }
+        });
+      }
+
+      // -------------------- SPA РОУТИНГ (DASHBOARD <-> DETAIL STUB) --------------------
+
+      _handleRoute() {
+        const hash = window.location.hash || '#/';
+        const dashView = document.getElementById('view-dashboard');
+        const detailView = document.getElementById('view-device-detail');
+
+        if (hash.startsWith('#/device/')) {
+          const deviceId = decodeURIComponent(hash.replace('#/device/', ''));
+          dashView.classList.add('hidden');
+          detailView.classList.remove('hidden');
+          this._renderDeviceDetailPage(deviceId);
+        } else {
+          detailView.classList.add('hidden');
+          dashView.classList.remove('hidden');
+          this._renderDashboard();
+        }
+      }
+
+      // -------------------- РЕНДЕРИНГ ДАШБОРДА И КАРТОЧЕК ЧИПОВ --------------------
+
+      _updateKpis() {
+        const devices = this.state.devices;
+        const total = devices.length;
+        const ok = devices.filter(d => d.telemetry.status === 'OK' && d.telemetry.fault_code === 0).length;
+        const alarm = devices.filter(d => d.telemetry.status === 'ALARM').length;
+        const warn = devices.filter(
+          d => d.telemetry.status === 'CALIBRATING' || d.telemetry.status === 'SENSOR_FAULT' || d.telemetry.status === 'OFFLINE' || d.telemetry.fault_code !== 0
+        ).length;
+
+        document.getElementById('kpi-total').textContent = total;
+        document.getElementById('kpi-ok').textContent = ok;
+        document.getElementById('kpi-alarm').textContent = alarm;
+        document.getElementById('kpi-warn').textContent = warn;
+      }
+
+      _getStatusBadgeHtml(status) {
+        const map = {
+          OK:           { bg: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40', dot: 'bg-emerald-400', label: 'OK' },
+          ALARM:        { bg: 'bg-rose-500/20 text-rose-300 border-rose-500/60',          dot: 'bg-rose-500 animate-ping', label: 'ALARM' },
+          SENSOR_FAULT: { bg: 'bg-red-600/20 text-red-300 border-red-500/60',             dot: 'bg-red-500', label: 'SENSOR_FAULT' },
+          CALIBRATING:  { bg: 'bg-amber-500/15 text-amber-300 border-amber-500/40',       dot: 'bg-amber-400 animate-pulse', label: 'CALIBRATING' },
+          OFFLINE:      { bg: 'bg-slate-700/40 text-slate-400 border-slate-600',          dot: 'bg-slate-500', label: 'OFFLINE' },
+        };
+        const cfg = map[status] || map.OFFLINE;
+        return `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${cfg.bg}">
+            <span class="w-2 h-2 rounded-full ${cfg.dot}"></span>
+            ${cfg.label}
+          </span>
+        `;
+      }
+
+      _renderFaultBadgesHtml(faultCode) {
+        const faults = decodeFaultMask(faultCode);
+        if (faults.length === 0) {
+          return `<span class="text-[11px] font-mono text-slate-500">fault_code: 0x0000 (NONE)</span>`;
+        }
+        return faults.map(f => {
+          const hex = '0x' + f.mask.toString(16).padStart(4, '0').toUpperCase();
+          return `
+            <span title="${this._escapeHtml(f.label)}" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/40">
+              ⚠ ${hex} ${f.name}
+            </span>
+          `;
+        }).join(' ');
+      }
+
+      _renderDashboard() {
+        this._updateKpis();
+        const grid = document.getElementById('devices-grid');
+
+        if (this.state.devices.length === 0) {
+          grid.innerHTML = `
+            <div class="col-span-full bg-slate-900/70 border border-dashed border-slate-700 rounded-2xl p-10 text-center">
+              <p class="text-slate-300 font-medium">Нет подключённых чипов ESP32-S3</p>
+              <p class="text-xs text-slate-500 mt-1">Нажмите «+ Добавить чип», чтобы зарегистрировать узел в системе</p>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = this.state.devices.map(dev => this._buildDeviceCardHtml(dev)).join('');
+
+        // Навешиваем обработчики на кнопки и Canvas для каждой карточки
+        this.state.devices.forEach((dev) => {
+          const canvas = document.getElementById(`canvas-${dev.id}`);
+          TelemetryChartRenderer.draw(canvas, dev, this.state.hoverIndices[dev.id] ?? null);
+
+          // Интерактивный hover по графику
+          if (canvas) {
+            const handlePointer = (clientX) => {
+              const rect = canvas.getBoundingClientRect();
+              const relX = clientX - rect.left - 40;
+              const plotW = rect.width - 56;
+              if (plotW <= 0 || dev.history.length === 0) return;
+              const ratio = Math.max(0, Math.min(1, relX / plotW));
+              const idx = Math.round(ratio * (dev.history.length - 1));
+              this.state.hoverIndices[dev.id] = idx;
+              TelemetryChartRenderer.draw(canvas, dev, idx);
+            };
+
+            canvas.addEventListener('mousemove', (e) => handlePointer(e.clientX));
+            canvas.addEventListener('touchmove', (e) => {
+              if (e.touches[0]) handlePointer(e.touches[0].clientX);
+            }, { passive: true });
+            canvas.addEventListener('mouseleave', () => {
+              this.state.hoverIndices[dev.id] = null;
+              TelemetryChartRenderer.draw(canvas, dev, null);
+            });
+          }
+
+          // Кнопка "Настройки" над чипом
+          const btnSettings = document.getElementById(`btn-settings-${dev.id}`);
+          if (btnSettings) {
+            btnSettings.addEventListener('click', () => this.openDeviceSettingsModal(dev.id));
+          }
+
+          // Кнопка "Детальная информация" над чипом (переход на новую страницу-заглушку)
+          const btnDetails = document.getElementById(`btn-details-${dev.id}`);
+          if (btnDetails) {
+            btnDetails.addEventListener('click', () => {
+              window.location.hash = `#/device/${encodeURIComponent(dev.id)}`;
+            });
+          }
+        });
+      }
+
+      _buildDeviceCardHtml(dev) {
+        const t = dev.telemetry;
+        const isAlarm = t.status === 'ALARM';
+        const cardBorder = isAlarm ? 'border-rose-500/80 alarm-card-pulse' : 'border-slate-800 hover:border-slate-700';
+        const lastUpdateStr = new Date(t.ts * 1000).toLocaleTimeString('ru-RU');
+
+        return `
+          <article id="card-${dev.id}" class="bg-slate-900/90 border ${cardBorder} rounded-2xl overflow-hidden shadow-xl transition flex flex-col">
+
+            <!-- ШАПКА КАРТОЧКИ ЧИПА (Название, ID, Статус + Кнопки Настройки и Детальная информация) -->
+            <div class="p-4 sm:p-5 bg-slate-950/60 border-b border-slate-800/90 space-y-3">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-xs font-bold text-cyan-400">
+                      ${this._escapeHtml(dev.id)}
+                    </span>
+                    <span class="text-[11px] font-mono text-slate-400">fw v${this._escapeHtml(t.fw)}</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800/80 text-slate-300 border border-slate-700/70">
+                      Model: ${this._escapeHtml(dev.model_source)}
+                    </span>
+                  </div>
+                  <h2 id="title-${dev.id}" class="text-base sm:text-lg font-bold text-white leading-snug">
+                    ${this._escapeHtml(dev.name)}
+                  </h2>
+                </div>
+
+                <!-- Статус чипа (единственный источник истины по interfaces.md §2) -->
+                <div id="status-badge-${dev.id}">
+                  ${this._getStatusBadgeHtml(t.status)}
+                </div>
+              </div>
+
+              <!-- Панель действий над чипом: Настройки + Детальная информация -->
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div id="faults-${dev.id}" class="flex flex-wrap items-center gap-1.5">
+                  ${this._renderFaultBadgesHtml(t.fault_code)}
+                </div>
+
+                <div class="flex items-center gap-2 ml-auto">
+                  <button id="btn-settings-${dev.id}" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Настройки</span>
+                  </button>
+
+                  <button id="btn-details-${dev.id}" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-600/20 hover:bg-cyan-600/35 text-cyan-300 border border-cyan-500/40 transition cursor-pointer">
+                    <span>Детальная информация</span>
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ЧИСЛОВЫЕ МЕТРИКИ ТЕЛЕМЕТРИИ -->
+            <div class="grid grid-cols-4 divide-x divide-slate-800/80 border-b border-slate-800/80 bg-slate-900/50">
+              <div class="p-3 text-center">
+                <div class="text-[10px] font-mono uppercase text-slate-400">D_m (Kalman)</div>
+                <div id="metric-dm-filt-${dev.id}" class="mt-0.5 font-mono text-base sm:text-lg font-bold ${isAlarm ? 'text-rose-400' : 'text-cyan-400'}">
+                  ${t.d_m_filtered.toFixed(2)}
+                </div>
+              </div>
+              <div class="p-3 text-center">
+                <div class="text-[10px] font-mono uppercase text-slate-400">D_m (Raw)</div>
+                <div id="metric-dm-raw-${dev.id}" class="mt-0.5 font-mono text-base sm:text-lg font-semibold text-slate-200">
+                  ${t.d_m.toFixed(2)}
+                </div>
+              </div>
+              <div class="p-3 text-center">
+                <div class="text-[10px] font-mono uppercase text-slate-400">RMS (X)</div>
+                <div id="metric-rms-${dev.id}" class="mt-0.5 font-mono text-base sm:text-lg font-semibold text-slate-200">
+                  ${t.rms.toFixed(3)} <span class="text-xs text-slate-500">g</span>
+                </div>
+              </div>
+              <div class="p-3 text-center">
+                <div class="text-[10px] font-mono uppercase text-slate-400">Порог / RPM</div>
+                <div id="metric-thr-${dev.id}" class="mt-0.5 font-mono text-xs sm:text-sm font-semibold text-slate-300">
+                  ${dev.threshold.toFixed(1)} <span class="text-slate-500">/</span> ${dev.nominal_rpm}
+                </div>
+              </div>
+            </div>
+
+            <!-- ГРАФИК РАБОТЫ ЧИПА -->
+            <div class="p-4 flex-1 flex flex-col justify-between">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-[11px] font-mono">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex items-center gap-1.5 text-cyan-300">
+                    <span class="w-3 h-0.5 bg-cyan-400 inline-block"></span> d_m_filtered (Калман)
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 text-sky-400/70">
+                    <span class="w-3 h-0.5 bg-sky-400/50 inline-block"></span> d_m (сырой)
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 text-rose-400">
+                    <span class="w-3 h-0.5 border-t border-dashed border-rose-500 inline-block"></span> threshold
+                  </span>
+                </div>
+                <span id="ts-${dev.id}" class="text-slate-500">Обновлено: ${lastUpdateStr}</span>
+              </div>
+
+              <div class="relative w-full h-[190px] bg-slate-950/70 rounded-xl border border-slate-800/80 overflow-hidden">
+                <canvas id="canvas-${dev.id}" class="w-full h-full block cursor-crosshair"></canvas>
+              </div>
+            </div>
+
+          </article>
+        `;
+      }
+
+      /**
+       * Точечное обновление данных существующей карточки при приходе пакета телеметрии
+       */
+      _patchDeviceCard(dev) {
+        const t = dev.telemetry;
+        const isAlarm = t.status === 'ALARM';
+        const card = document.getElementById(`card-${dev.id}`);
+        if (!card) {
+          this._renderDashboard();
+          return;
+        }
+
+        card.className = `bg-slate-900/90 border ${isAlarm ? 'border-rose-500/80 alarm-card-pulse' : 'border-slate-800 hover:border-slate-700'} rounded-2xl overflow-hidden shadow-xl transition flex flex-col`;
+
+        const statusEl = document.getElementById(`status-badge-${dev.id}`);
+        if (statusEl) statusEl.innerHTML = this._getStatusBadgeHtml(t.status);
+
+        const faultsEl = document.getElementById(`faults-${dev.id}`);
+        if (faultsEl) faultsEl.innerHTML = this._renderFaultBadgesHtml(t.fault_code);
+
+        const dmFiltEl = document.getElementById(`metric-dm-filt-${dev.id}`);
+        if (dmFiltEl) {
+          dmFiltEl.textContent = t.d_m_filtered.toFixed(2);
+          dmFiltEl.className = `mt-0.5 font-mono text-base sm:text-lg font-bold ${isAlarm ? 'text-rose-400' : 'text-cyan-400'}`;
+        }
+
+        const dmRawEl = document.getElementById(`metric-dm-raw-${dev.id}`);
+        if (dmRawEl) dmRawEl.textContent = t.d_m.toFixed(2);
+
+        const rmsEl = document.getElementById(`metric-rms-${dev.id}`);
+        if (rmsEl) rmsEl.innerHTML = `${t.rms.toFixed(3)} <span class="text-xs text-slate-500">g</span>`;
+
+        const thrEl = document.getElementById(`metric-thr-${dev.id}`);
+        if (thrEl) thrEl.innerHTML = `${dev.threshold.toFixed(1)} <span class="text-slate-500">/</span> ${dev.nominal_rpm}`;
+
+        const tsEl = document.getElementById(`ts-${dev.id}`);
+        if (tsEl) tsEl.textContent = `Обновлено: ${new Date(t.ts * 1000).toLocaleTimeString('ru-RU')}`;
+
+        const canvas = document.getElementById(`canvas-${dev.id}`);
+        TelemetryChartRenderer.draw(canvas, dev, this.state.hoverIndices[dev.id] ?? null);
+      }
+
+      // -------------------- СТРАНИЦА ДЕТАЛЬНОЙ ИНФОРМАЦИИ (ЗАГЛУШКА) --------------------
+
+      _renderDeviceDetailPage(deviceId) {
+        const container = document.getElementById('view-device-detail');
+        const dev = this.state.devices.find(d => d.id === deviceId);
+
+        if (!dev) {
+          container.innerHTML = `
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-4">
+              <h2 class="text-lg font-bold text-rose-400">Устройство "${this._escapeHtml(deviceId)}" не найдено</h2>
+              <a href="#/" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm text-white">
+                ← Назад к дашборду
+              </a>
+            </div>
+          `;
+          return;
+        }
+
+        const t = dev.telemetry;
+
+        container.innerHTML = `
+          <!-- Навигация назад и заголовок узла -->
+          <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-5">
+            <div class="flex items-center gap-4">
+              <a href="#/" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+                ← Назад к дашборду
+              </a>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 font-mono text-xs font-bold text-cyan-400">${this._escapeHtml(dev.id)}</span>
+                  <span class="text-xs font-mono text-slate-400">Прошивка: v${this._escapeHtml(t.fw)}</span>
+                </div>
+                <h1 class="text-lg sm:text-xl font-bold text-white mt-0.5">${this._escapeHtml(dev.name)}</h1>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              ${this._getStatusBadgeHtml(t.status)}
+              <button id="detail-open-settings" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition cursor-pointer">
+                Настройки чипа
+              </button>
+            </div>
+          </div>
+
+          <!-- Баннер-заглушка для подключения детального API -->
+          <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <span class="px-2 py-1 rounded bg-amber-500/20 text-amber-300 font-mono text-xs font-bold">API STUB</span>
+              <div class="text-xs sm:text-sm text-amber-100/90">
+                <strong>Страница детальной диагностики чипа (заглушка).</strong> Архитектура готова к подключению топиков
+                <code class="font-mono text-amber-300">p11/gesteresis/${this._escapeHtml(dev.id)}/raw</code> (режим аудита C) и эндпоинта <code class="font-mono text-amber-300">GET /api/v1/devices/${this._escapeHtml(dev.id)}/model</code>.
+              </div>
+            </div>
+          </div>
+
+          <!-- Сетка: Вектор признаков x[12] + Матрица S⁻¹ (12x12) и NVS CalibrationBlob -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- Блок 1: 12-мерный вектор признаков x[12] (interfaces.md §1) -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden">
+              <div class="px-5 py-4 border-b border-slate-800 bg-slate-950/50 flex items-center justify-between">
+                <div>
+                  <h2 class="text-sm font-bold text-white">Вектор признаков x[12] (float32)</h2>
+                  <p class="text-xs text-slate-400">Контракт порядка признаков (interfaces.md §1)</p>
+                </div>
+                <span class="font-mono text-xs text-cyan-400">DIM = 12</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="border-b border-slate-800 text-[11px] font-mono text-slate-400 bg-slate-950/30">
+                      <th class="py-2.5 px-4">#</th>
+                      <th class="py-2.5 px-3">Ключ</th>
+                      <th class="py-2.5 px-3">Описание</th>
+                      <th class="py-2.5 px-4 text-right">Значение (Stub)</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/60 text-xs font-mono">
+                    ${FEATURE_SCHEMA_X12.map(f => {
+                      const mockVal = f.key === 'rms_x' ? t.rms.toFixed(4) : '— (ожидание /raw)';
+                      return `
+                        <tr class="hover:bg-slate-800/30">
+                          <td class="py-2 px-4 text-slate-500">${f.idx}</td>
+                          <td class="py-2 px-3 text-cyan-300 font-semibold">${f.key}</td>
+                          <td class="py-2 px-3 font-sans text-slate-300">${f.desc}</td>
+                          <td class="py-2 px-4 text-right text-slate-400">${mockVal} <span class="text-slate-600">${f.unit}</span></td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Блок 2: CalibrationBlob (644 байта) и матрица S⁻¹ -->
+            <div class="space-y-6">
+              <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div>
+                    <h2 class="text-sm font-bold text-white">Состояние модели NVS (CalibrationBlob)</h2>
+                    <p class="text-xs text-slate-400">Namespace: <code class="font-mono text-slate-300">gesteresis</code> • Размер: 644 байта</p>
+                  </div>
+                  <span class="px-2 py-0.5 rounded font-mono text-xs bg-slate-800 text-cyan-400 border border-slate-700">
+                    Source: ${this._escapeHtml(dev.model_source)}
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 font-mono text-xs">
+                  <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <span class="text-slate-500 block text-[10px]">D_m (Kalman / Raw)</span>
+                    <span class="text-sm font-bold text-white mt-0.5 block">${t.d_m_filtered.toFixed(3)} / ${t.d_m.toFixed(3)}</span>
+                  </div>
+                  <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <span class="text-slate-500 block text-[10px]">Порог тревоги (threshold)</span>
+                    <span class="text-sm font-bold text-rose-400 mt-0.5 block">${dev.threshold.toFixed(2)}</span>
+                  </div>
+                  <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <span class="text-slate-500 block text-[10px]">Число обусловленности cond(S)</span>
+                    <span class="text-sm font-bold text-amber-300 mt-0.5 block">${dev.cond_number ? dev.cond_number.toExponential(2) : '—'}</span>
+                  </div>
+                  <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <span class="text-slate-500 block text-[10px]">Номинал RPM / Magic</span>
+                    <span class="text-sm font-bold text-slate-200 mt-0.5 block">${dev.nominal_rpm} / 0x47455354</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Заглушка под матрицу S⁻¹ 12x12 -->
+              <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-3">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-sm font-bold text-white">Обратная ковариационная матрица S⁻¹ (12×12)</h2>
+                  <span class="text-xs font-mono text-slate-400">144 float32</span>
+                </div>
+                <p class="text-xs text-slate-400">
+                  Регуляризованная матрица <code class="font-mono text-slate-300">inv(S + λ·I)</code>, загруженная в память ESP32-S3. После подключения бэкенда здесь будет отображаться тепловая карта корреляций.
+                </p>
+                <div class="grid grid-cols-12 gap-1 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[9px] text-center select-none">
+                  ${Array.from({ length: 144 }, (_, idx) => {
+                    const row = Math.floor(idx / 12);
+                    const col = idx % 12;
+                    const isDiag = row === col;
+                    return `<div class="py-1 rounded ${isDiag ? 'bg-cyan-500/25 text-cyan-300 font-bold' : 'bg-slate-900 text-slate-600'}">${isDiag ? '1.0' : '0.0'}</div>`;
+                  }).join('')}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        `;
+
+        document.getElementById('detail-open-settings')?.addEventListener('click', () => {
+          this.openDeviceSettingsModal(dev.id);
+        });
+      }
+
+      // -------------------- МОДАЛЬНЫЕ ОКНА --------------------
+
+      openModal(modalId) {
+        const el = document.getElementById(modalId);
+        if (!el) return;
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+      }
+
+      closeModal(modalId) {
+        const el = document.getElementById(modalId);
+        if (!el) return;
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
+
+      openDeviceSettingsModal(deviceId) {
+        const dev = this.state.devices.find(d => d.id === deviceId);
+        if (!dev) return;
+
+        this.state.activeSettingsDeviceId = deviceId;
+        document.getElementById('settings-device-id-badge').textContent = dev.id;
+        document.getElementById('settings-topic-id').textContent = dev.id;
+        document.getElementById('input-device-name').value = dev.name;
+        document.getElementById('input-cmd-threshold').value = dev.threshold;
+        document.getElementById('input-cmd-rpm').value = dev.nominal_rpm;
+        document.getElementById('settings-cmd-log').textContent = `Подключено к узлу ${dev.id}. Готов к отправке команд в p11/gesteresis/${dev.id}/cmd`;
+
+        this.openModal('modal-settings');
+      }
+
+      _appendSettingsLog(obj) {
+        const logEl = document.getElementById('settings-cmd-log');
+        const time = new Date().toLocaleTimeString('ru-RU');
+        logEl.textContent = `[${time}] ${JSON.stringify(obj)}\n` + logEl.textContent;
+      }
+
+      // -------------------- ОБРАБОТЧИКИ СОБЫТИЙ --------------------
+
+      _bindGlobalEvents() {
+        window.addEventListener('hashchange', () => this._handleRoute());
+        window.addEventListener('resize', () => {
+          if (!window.location.hash.startsWith('#/device/')) {
+            this.state.devices.forEach(dev => {
+              const canvas = document.getElementById(`canvas-${dev.id}`);
+              TelemetryChartRenderer.draw(canvas, dev, null);
+            });
+          }
+        });
+
+        // Закрытие модалок по кнопке [data-close-modal] или клику по фону
+        document.querySelectorAll('[data-close-modal]').forEach(btn => {
+          btn.addEventListener('click', () => this.closeModal(btn.getAttribute('data-close-modal')));
+        });
+        document.querySelectorAll('[id^="modal-"]').forEach(modal => {
+          modal.addEventListener('click', (e) => {
+            if (e.target === modal) this.closeModal(modal.id);
+          });
+        });
+
+        // Переключатель Play / Pause live-потока
+        document.getElementById('btn-toggle-stream').addEventListener('click', () => {
+          this.state.isStreaming = !this.state.isStreaming;
+          const dot = document.getElementById('stream-indicator');
+          const label = document.getElementById('stream-label');
+          if (this.state.isStreaming) {
+            dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+            label.textContent = 'LIVE (5s)';
+            this._startTelemetryStream();
+            this.showToast('Поток телеметрии (5 сек) возобновлён', 'info');
+          } else {
+            dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+            label.textContent = 'PAUSED';
+            if (this.unsubscribeStream) this.unsubscribeStream();
+            this.showToast('Обновление графиков поставлено на паузу', 'info');
+          }
+        });
+
+        // Модальное окно подписки
+        document.getElementById('btn-open-sub-modal').addEventListener('click', () => {
+          const dt = this.state.subscription ? new Date(this.state.subscription.expiresAt).toLocaleDateString('ru-RU') : '—';
+          document.getElementById('modal-sub-current-date').textContent = dt;
+          this.openModal('modal-subscription');
+        });
+
+        document.getElementById('btn-confirm-payment').addEventListener('click', async () => {
+          const selected = document.querySelector('input[name="sub_plan"]:checked');
+          const planId = selected ? selected.value : 'plan_1m';
+          const btn = document.getElementById('btn-confirm-payment');
+          btn.disabled = true;
+          btn.textContent = 'Обработка платежа...';
+
+          try {
+            const updatedSub = await this.api.createPaymentSession(planId);
+            this.state.subscription = updatedSub;
+            this._renderSubscriptionHeader();
+            this.closeModal('modal-subscription');
+            const newDateStr = new Date(updatedSub.expiresAt).toLocaleDateString('ru-RU');
+            this.showToast(`Подписка успешно продлена до ${newDateStr}`, 'success');
+          } catch (err) {
+            this.showToast(`Ошибка оплаты: ${err.message}`, 'error');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = 'Перейти к оплате и продлить подписку';
+          }
+        });
+
+        // Авторизация / Регистрация
+        document.getElementById('switch-to-register').addEventListener('click', () => {
+          this.closeModal('modal-login');
+          this.openModal('modal-register');
+        });
+        document.getElementById('switch-to-login').addEventListener('click', () => {
+          this.closeModal('modal-register');
+          this.openModal('modal-login');
+        });
+
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const email = document.getElementById('login-email').value.trim();
+          const pass = document.getElementById('login-password').value;
+          const errBox = document.getElementById('login-error');
+          errBox.classList.add('hidden');
+          try {
+            this.state.user = await this.api.login(email, pass);
+            this._renderAuthHeader();
+            this.closeModal('modal-login');
+            this.showToast(`Добро пожаловать, ${email}`, 'success');
+          } catch (err) {
+            errBox.textContent = err.message;
+            errBox.classList.remove('hidden');
+          }
+        });
+
+        document.getElementById('form-register').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const company = document.getElementById('reg-company').value.trim();
+          const email = document.getElementById('reg-email').value.trim();
+          const pass = document.getElementById('reg-password').value;
+          const errBox = document.getElementById('register-error');
+          errBox.classList.add('hidden');
+          try {
+            this.state.user = await this.api.register(email, pass, company);
+            this._renderAuthHeader();
+            this.closeModal('modal-register');
+            this.showToast('Аккаунт предприятия успешно создан', 'success');
+          } catch (err) {
+            errBox.textContent = err.message;
+            errBox.classList.remove('hidden');
+          }
+        });
+
+        // Добавление нового чипа
+        document.getElementById('btn-add-chip').addEventListener('click', () => this.openModal('modal-add-chip'));
+        document.getElementById('form-add-chip').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const id = document.getElementById('new-chip-id').value.trim();
+          const name = document.getElementById('new-chip-name').value.trim();
+          const nominal_rpm = document.getElementById('new-chip-rpm').value;
+          const threshold = document.getElementById('new-chip-threshold').value;
+          try {
+            await this.api.addDevice({ id, name, nominal_rpm, threshold });
+            this.closeModal('modal-add-chip');
+            e.target.reset();
+            this._renderDashboard();
+            this.showToast(`Узел ${id} добавлен в мониторинг`, 'success');
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          }
+        });
+
+        // Формы внутри модального окна настроек чипа
+        document.getElementById('form-device-meta').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const id = this.state.activeSettingsDeviceId;
+          const name = document.getElementById('input-device-name').value.trim();
+          try {
+            await this.api.updateDeviceMeta(id, { name });
+            const titleEl = document.getElementById(`title-${id}`);
+            if (titleEl) titleEl.textContent = name;
+            this.showToast('Название узла обновлено', 'success');
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          }
+        });
+
+        document.getElementById('form-cmd-threshold').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const id = this.state.activeSettingsDeviceId;
+          const threshold = parseFloat(document.getElementById('input-cmd-threshold').value);
+          try {
+            const ack = await this.api.sendCommand(id, 'SET_THRESHOLD', { threshold });
+            this._appendSettingsLog(ack);
+            const dev = this.state.devices.find(d => d.id === id);
+            if (dev) this._patchDeviceCard(dev);
+            this._updateKpis();
+            this.showToast(`Порог D_m = ${threshold} отправлен на ${id}`, 'success');
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          }
+        });
+
+        document.getElementById('form-cmd-rpm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const id = this.state.activeSettingsDeviceId;
+          const nominal_rpm = parseInt(document.getElementById('input-cmd-rpm').value, 10);
+          try {
+            const ack = await this.api.sendCommand(id, 'SET_RPM', { nominal_rpm });
+            this._appendSettingsLog(ack);
+            const dev = this.state.devices.find(d => d.id === id);
+            if (dev) this._patchDeviceCard(dev);
+            this.showToast(`Номинал RPM = ${nominal_rpm} отправлен на ${id}`, 'success');
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          }
+        });
+
+        document.getElementById('form-cmd-calibrate').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const id = this.state.activeSettingsDeviceId;
+          const duration_s = parseInt(document.getElementById('input-calib-duration').value, 10);
+          try {
+            const ack = await this.api.sendCommand(id, 'CALIBRATE', { duration_s });
+            this._appendSettingsLog(ack);
+            const dev = this.state.devices.find(d => d.id === id);
+            if (dev) this._patchDeviceCard(dev);
+            this._updateKpis();
+            this.showToast(`Команда CALIBRATE (${duration_s}с) отправлена на ${id}`, 'info');
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          }
+        });
+
+        document.getElementById('btn-cmd-clear-fault').addEventListener('click', async () => {
+          const id = this.state.activeSettingsDeviceId;
+          try {
+            const ack = await this.api.sendCommand(id, 'CLEAR_FAULT', {});
+            this._appendSettingsLog(ack);
+            const dev = this.state.devices.find(d => d.id === id);
+            if (dev) this._patchDeviceCard(dev);
+            this._updateKpis();
+            this.showToast(`Ошибка сброшена (CLEAR_FAULT) на ${id}`, 'success');
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          }
+        });
+
+        document.getElementById('btn-cmd-reset').addEventListener('click', async () => {
+          const id = this.state.activeSettingsDeviceId;
+          try {
+            const ack = await this.api.sendCommand(id, 'RESET', {});
+            this._appendSettingsLog(ack);
+            const dev = this.state.devices.find(d => d.id === id);
+            if (dev) this._patchDeviceCard(dev);
+            this._updateKpis();
+            this.showToast(`Команда RESET отправлена на ${id}`, 'info');
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          }
+        });
+
+        document.getElementById('btn-clear-cmd-log').addEventListener('click', () => {
+          document.getElementById('settings-cmd-log').textContent = 'Лог очищен.';
+        });
+      }
+
+      // -------------------- УВЕДОМЛЕНИЯ (TOASTS) --------------------
+
+      showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const colors = {
+          success: 'bg-slate-900 border-emerald-500/60 text-emerald-300',
+          error:   'bg-slate-900 border-rose-500/60 text-rose-300',
+          info:    'bg-slate-900 border-cyan-500/60 text-cyan-200',
+        };
+        const toast = document.createElement('div');
+        toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-xl text-xs font-medium flex items-center justify-between gap-3 transition-all ${colors[type] || colors.info}`;
+        toast.innerHTML = `<span>${this._escapeHtml(message)}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(6px)';
+          setTimeout(() => toast.remove(), 250);
+        }, 3500);
+      }
+
+      _escapeHtml(str) {
+        return String(str ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+    }
+
+    // Запуск приложения после загрузки окна
+    window.addEventListener('DOMContentLoaded', () => {
+      window.gesteresisApp = new GesteresisApp();
+      window.gesteresisApp.init();
+    });
+  </script>
+</body>
+</html>
