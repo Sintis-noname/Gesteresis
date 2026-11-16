@@ -72,10 +72,10 @@ class GesteresisApp {
     if (!badge) return;
     if (APP_CONFIG.USE_MOCK_DATA) {
       badge.textContent = 'MODE: MOCK_STREAM (READY FOR BACKEND)';
-      badge.className = 'px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-900 border border-slate-700 text-slate-400';
+      badge.className = 'px-2.5 py-1.5 rounded-lg text-xs font-mono bg-bg-surface border border-border-subtle text-text-secondary';
     } else {
       badge.textContent = `API: ${APP_CONFIG.API_BASE_URL}`;
-      badge.className = 'px-2.5 py-1.5 rounded-lg text-xs font-mono bg-emerald-950/60 border border-emerald-500/40 text-emerald-400';
+      badge.className = 'px-2.5 py-1.5 rounded-lg text-xs font-mono bg-status-ok/10 border border-status-ok/40 text-status-ok';
     }
   }
 
@@ -92,11 +92,11 @@ class GesteresisApp {
     dateEl.textContent = formatted;
 
     if (sub.isActive) {
-      dotEl.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50';
-      dateEl.className = 'font-mono font-semibold text-emerald-300';
+      dotEl.className = 'w-2.5 h-2.5 rounded-full bg-status-ok shadow-sm';
+      dateEl.className = 'font-mono font-semibold text-status-ok';
     } else {
-      dotEl.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping';
-      dateEl.className = 'font-mono font-semibold text-rose-400';
+      dotEl.className = 'w-2.5 h-2.5 rounded-full bg-status-alarm animate-ping';
+      dateEl.className = 'font-mono font-semibold text-status-alarm';
       dateEl.textContent = `${formatted} (Истекла!)`;
     }
   }
@@ -113,7 +113,8 @@ class GesteresisApp {
           <span class="text-xs font-mono font-semibold text-slate-200">${this._escapeHtml(this.state.user.email)}</span>
           <span class="text-[10px] text-slate-400">${this._escapeHtml(this.state.user.company || 'Инженер')}</span>
         </div>
-        <button id="btn-logout" type="button" class="px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/40 text-slate-300 border border-slate-700 transition cursor-pointer">
+        <button id="btn-logout" type="button"
+          class="px-3.5 py-2 rounded-xl text-xs font-medium bg-bg-surface hover:bg-status-alarm/20 hover:text-status-alarm text-text-secondary border border-border-subtle hover:border-status-alarm/40 transition cursor-pointer">
           Выйти
         </button>
       `;
@@ -125,18 +126,25 @@ class GesteresisApp {
       });
     } else {
       container.innerHTML = `
-        <button id="btn-open-login" type="button" class="px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer">
+        <button type="button" data-modal-trigger="modal-login"
+          class="px-3.5 py-2 rounded-xl text-xs font-medium bg-bg-surface hover:bg-bg-elevated text-text-primary border border-border-subtle transition cursor-pointer">
           Войти
         </button>
-        <button id="btn-open-register" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm shadow-cyan-500/20 transition cursor-pointer">
+        <button type="button" data-modal-trigger="modal-register"
+          class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-accent text-bg-canvas hover:opacity-90 shadow-sm transition cursor-pointer">
           Регистрация
         </button>
       `;
-      document.getElementById('btn-open-login').addEventListener('click', () => this.openModal('modal-login'));
-      document.getElementById('btn-open-register').addEventListener('click', () => this.openModal('modal-register'));
+      // Триггеры навесит ModalManager.init() — но он уже вызван при старте,
+      // поэтому для динамически вставленных кнопок навешиваем вручную:
+      container.querySelectorAll('[data-modal-trigger]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-modal-trigger');
+          if (window.modalManager) window.modalManager.open(id);
+        });
+      });
     }
   }
-
   // -------------------- ПОТОК ТЕЛЕМЕТРИИ --------------------
 
   _startTelemetryStream() {
@@ -206,11 +214,11 @@ class GesteresisApp {
 
   _getStatusBadgeHtml(status) {
     const map = {
-      OK:           { bg: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40', dot: 'bg-emerald-400', label: 'OK' },
-      ALARM:        { bg: 'bg-rose-500/20 text-rose-300 border-rose-500/60',          dot: 'bg-rose-500 animate-ping', label: 'ALARM' },
-      SENSOR_FAULT: { bg: 'bg-red-600/20 text-red-300 border-red-500/60',             dot: 'bg-red-500', label: 'SENSOR_FAULT' },
-      CALIBRATING:  { bg: 'bg-amber-500/15 text-amber-300 border-amber-500/40',       dot: 'bg-amber-400 animate-pulse', label: 'CALIBRATING' },
-      OFFLINE:      { bg: 'bg-slate-700/40 text-slate-400 border-slate-600',          dot: 'bg-slate-500', label: 'OFFLINE' },
+      OK:           { bg: 'bg-status-ok/15 text-status-ok border-status-ok/40',             dot: 'bg-status-ok', label: 'OK' },
+      ALARM:        { bg: 'bg-status-alarm/20 text-status-alarm border-status-alarm/60',     dot: 'bg-status-alarm animate-ping', label: 'ALARM' },
+      SENSOR_FAULT: { bg: 'bg-status-alarm/25 text-status-alarm border-status-alarm/70',     dot: 'bg-status-alarm', label: 'SENSOR_FAULT' },
+      CALIBRATING:  { bg: 'bg-status-warn/15 text-status-warn border-status-warn/40',        dot: 'bg-status-warn animate-pulse', label: 'CALIBRATING' },
+      OFFLINE:      { bg: 'bg-bg-elevated text-text-muted border-border-strong',             dot: 'bg-text-muted', label: 'OFFLINE' },
     };
     const cfg = map[status] || map.OFFLINE;
     return `
@@ -224,12 +232,12 @@ class GesteresisApp {
   _renderFaultBadgesHtml(faultCode) {
     const faults = decodeFaultMask(faultCode);
     if (faults.length === 0) {
-      return `<span class="text-[11px] font-mono text-slate-500">fault_code: 0x0000 (NONE)</span>`;
+      return `<span class="text-[11px] font-mono text-text-muted">fault_code: 0x0000 (NONE)</span>`;
     }
     return faults.map(f => {
       const hex = '0x' + f.mask.toString(16).padStart(4, '0').toUpperCase();
       return `
-        <span title="${this._escapeHtml(f.label)}" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/40">
+        <span title="${this._escapeHtml(f.label)}" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-status-warn/15 text-status-warn border border-status-warn/40">
           ⚠ ${hex} ${f.name}
         </span>
       `;
@@ -300,52 +308,50 @@ class GesteresisApp {
   _buildDeviceCardHtml(dev) {
     const t = dev.telemetry;
     const isAlarm = t.status === 'ALARM';
-    const cardBorder = isAlarm ? 'border-rose-500/80 alarm-card-pulse' : 'border-slate-800 hover:border-slate-700';
+    const cardBorder = isAlarm ? 'border-status-alarm/80 alarm-card-pulse' : 'border-border-subtle hover:border-border-strong';
     const lastUpdateStr = new Date(t.ts * 1000).toLocaleTimeString('ru-RU');
 
     return `
-      <article id="card-${dev.id}" class="bg-slate-900/90 border ${cardBorder} rounded-2xl overflow-hidden shadow-xl transition flex flex-col">
+      <article id="card-${dev.id}" class="bg-bg-surface border ${cardBorder} rounded-card overflow-hidden shadow-xl transition flex flex-col">
 
-        <!-- ШАПКА КАРТОЧКИ ЧИПА (Название, ID, Статус + Кнопки Настройки и Детальная информация) -->
-        <div class="p-4 sm:p-5 bg-slate-950/60 border-b border-slate-800/90 space-y-3">
+        <!-- ШАПКА КАРТОЧКИ -->
+        <div class="p-4 sm:p-5 bg-bg-canvas/60 border-b border-border-subtle space-y-3">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="space-y-1">
               <div class="flex flex-wrap items-center gap-2">
-                <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-xs font-bold text-cyan-400">
+                <span class="px-2 py-0.5 rounded bg-bg-elevated border border-border-subtle font-mono text-xs font-bold text-accent">
                   ${this._escapeHtml(dev.id)}
                 </span>
-                <span class="text-[11px] font-mono text-slate-400">fw v${this._escapeHtml(t.fw)}</span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800/80 text-slate-300 border border-slate-700/70">
+                <span class="text-[11px] font-mono text-text-secondary">fw v${this._escapeHtml(t.fw)}</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-bg-elevated text-text-secondary border border-border-subtle">
                   Model: ${this._escapeHtml(dev.model_source)}
                 </span>
               </div>
-              <h2 id="title-${dev.id}" class="text-base sm:text-lg font-bold text-white leading-snug">
+              <h2 id="title-${dev.id}" class="text-base sm:text-lg font-bold text-text-primary leading-snug">
                 ${this._escapeHtml(dev.name)}
               </h2>
             </div>
 
-            <!-- Статус чипа (единственный источник истины по interfaces.md §2) -->
             <div id="status-badge-${dev.id}">
               ${this._getStatusBadgeHtml(t.status)}
             </div>
           </div>
 
-          <!-- Панель действий над чипом: Настройки + Детальная информация -->
           <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
             <div id="faults-${dev.id}" class="flex flex-wrap items-center gap-1.5">
               ${this._renderFaultBadgesHtml(t.fault_code)}
             </div>
 
             <div class="flex items-center gap-2 ml-auto">
-              <button id="btn-settings-${dev.id}" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer">
-                <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <button id="btn-settings-${dev.id}" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-bg-elevated hover:bg-bg-surface text-text-primary border border-border-subtle transition cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <span>Настройки</span>
               </button>
 
-              <button id="btn-details-${dev.id}" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-600/20 hover:bg-cyan-600/35 text-cyan-300 border border-cyan-500/40 transition cursor-pointer">
+              <button id="btn-details-${dev.id}" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-accent/15 hover:bg-accent/25 text-accent border border-accent/40 transition cursor-pointer">
                 <span>Детальная информация</span>
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -355,52 +361,52 @@ class GesteresisApp {
           </div>
         </div>
 
-        <!-- ЧИСЛОВЫЕ МЕТРИКИ ТЕЛЕМЕТРИИ -->
-        <div class="grid grid-cols-4 divide-x divide-slate-800/80 border-b border-slate-800/80 bg-slate-900/50">
+        <!-- МЕТРИКИ -->
+        <div class="grid grid-cols-4 divide-x divide-border-subtle border-b border-border-subtle bg-bg-surface/50">
           <div class="p-3 text-center">
-            <div class="text-[10px] font-mono uppercase text-slate-400">D_m (Kalman)</div>
-            <div id="metric-dm-filt-${dev.id}" class="mt-0.5 font-mono text-base sm:text-lg font-bold ${isAlarm ? 'text-rose-400' : 'text-cyan-400'}">
+            <div class="text-[10px] font-mono uppercase text-text-secondary">D_m (Kalman)</div>
+            <div id="metric-dm-filt-${dev.id}" class="mt-0.5 font-mono text-base sm:text-lg font-bold ${isAlarm ? 'text-status-alarm' : 'text-accent'}">
               ${t.d_m_filtered.toFixed(2)}
             </div>
           </div>
           <div class="p-3 text-center">
-            <div class="text-[10px] font-mono uppercase text-slate-400">D_m (Raw)</div>
-            <div id="metric-dm-raw-${dev.id}" class="mt-0.5 font-mono text-base sm:text-lg font-semibold text-slate-200">
+            <div class="text-[10px] font-mono uppercase text-text-secondary">D_m (Raw)</div>
+            <div id="metric-dm-raw-${dev.id}" class="mt-0.5 font-mono text-base sm:text-lg font-semibold text-text-primary">
               ${t.d_m.toFixed(2)}
             </div>
           </div>
           <div class="p-3 text-center">
-            <div class="text-[10px] font-mono uppercase text-slate-400">RMS (X)</div>
-            <div id="metric-rms-${dev.id}" class="mt-0.5 font-mono text-base sm:text-lg font-semibold text-slate-200">
-              ${t.rms.toFixed(3)} <span class="text-xs text-slate-500">g</span>
+            <div class="text-[10px] font-mono uppercase text-text-secondary">RMS (X)</div>
+            <div id="metric-rms-${dev.id}" class="mt-0.5 font-mono text-base sm:text-lg font-semibold text-text-primary">
+              ${t.rms.toFixed(3)} <span class="text-xs text-text-muted">g</span>
             </div>
           </div>
           <div class="p-3 text-center">
-            <div class="text-[10px] font-mono uppercase text-slate-400">Порог / RPM</div>
-            <div id="metric-thr-${dev.id}" class="mt-0.5 font-mono text-xs sm:text-sm font-semibold text-slate-300">
-              ${dev.threshold.toFixed(1)} <span class="text-slate-500">/</span> ${dev.nominal_rpm}
+            <div class="text-[10px] font-mono uppercase text-text-secondary">Порог / RPM</div>
+            <div id="metric-thr-${dev.id}" class="mt-0.5 font-mono text-xs sm:text-sm font-semibold text-text-primary">
+              ${dev.threshold.toFixed(1)} <span class="text-text-muted">/</span> ${dev.nominal_rpm}
             </div>
           </div>
         </div>
 
-        <!-- ГРАФИК РАБОТЫ ЧИПА -->
+        <!-- ГРАФИК -->
         <div class="p-4 flex-1 flex flex-col justify-between">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-[11px] font-mono">
             <div class="flex items-center gap-3">
-              <span class="inline-flex items-center gap-1.5 text-cyan-300">
-                <span class="w-3 h-0.5 bg-cyan-400 inline-block"></span> d_m_filtered (Калман)
+              <span class="inline-flex items-center gap-1.5 text-accent">
+                <span class="w-3 h-0.5 bg-accent inline-block"></span> d_m_filtered (Калман)
               </span>
-              <span class="inline-flex items-center gap-1.5 text-sky-400/70">
-                <span class="w-3 h-0.5 bg-sky-400/50 inline-block"></span> d_m (сырой)
+              <span class="inline-flex items-center gap-1.5 text-accent/70">
+                <span class="w-3 h-0.5 bg-accent/50 inline-block"></span> d_m (сырой)
               </span>
-              <span class="inline-flex items-center gap-1.5 text-rose-400">
-                <span class="w-3 h-0.5 border-t border-dashed border-rose-500 inline-block"></span> threshold
+              <span class="inline-flex items-center gap-1.5 text-status-alarm">
+                <span class="w-3 h-0.5 border-t border-dashed border-status-alarm inline-block"></span> threshold
               </span>
             </div>
-            <span id="ts-${dev.id}" class="text-slate-500">Обновлено: ${lastUpdateStr}</span>
+            <span id="ts-${dev.id}" class="text-text-muted">Обновлено: ${lastUpdateStr}</span>
           </div>
 
-          <div class="relative w-full h-[190px] bg-slate-950/70 rounded-xl border border-slate-800/80 overflow-hidden">
+          <div class="relative w-full h-[190px] bg-bg-canvas/70 rounded-xl border border-border-subtle overflow-hidden">
             <canvas id="canvas-${dev.id}" class="w-full h-full block cursor-crosshair"></canvas>
           </div>
         </div>
@@ -409,9 +415,6 @@ class GesteresisApp {
     `;
   }
 
-  /**
-   * Точечное обновление данных существующей карточки при приходе пакета телеметрии
-   */
   _patchDeviceCard(dev) {
     const t = dev.telemetry;
     const isAlarm = t.status === 'ALARM';
@@ -421,7 +424,7 @@ class GesteresisApp {
       return;
     }
 
-    card.className = `bg-slate-900/90 border ${isAlarm ? 'border-rose-500/80 alarm-card-pulse' : 'border-slate-800 hover:border-slate-700'} rounded-2xl overflow-hidden shadow-xl transition flex flex-col`;
+    card.className = `bg-bg-surface border ${isAlarm ? 'border-status-alarm/80 alarm-card-pulse' : 'border-border-subtle hover:border-border-strong'} rounded-card overflow-hidden shadow-xl transition flex flex-col`;
 
     const statusEl = document.getElementById(`status-badge-${dev.id}`);
     if (statusEl) statusEl.innerHTML = this._getStatusBadgeHtml(t.status);
@@ -432,17 +435,17 @@ class GesteresisApp {
     const dmFiltEl = document.getElementById(`metric-dm-filt-${dev.id}`);
     if (dmFiltEl) {
       dmFiltEl.textContent = t.d_m_filtered.toFixed(2);
-      dmFiltEl.className = `mt-0.5 font-mono text-base sm:text-lg font-bold ${isAlarm ? 'text-rose-400' : 'text-cyan-400'}`;
+      dmFiltEl.className = `mt-0.5 font-mono text-base sm:text-lg font-bold ${isAlarm ? 'text-status-alarm' : 'text-accent'}`;
     }
 
     const dmRawEl = document.getElementById(`metric-dm-raw-${dev.id}`);
     if (dmRawEl) dmRawEl.textContent = t.d_m.toFixed(2);
 
     const rmsEl = document.getElementById(`metric-rms-${dev.id}`);
-    if (rmsEl) rmsEl.innerHTML = `${t.rms.toFixed(3)} <span class="text-xs text-slate-500">g</span>`;
+    if (rmsEl) rmsEl.innerHTML = `${t.rms.toFixed(3)} <span class="text-xs text-text-muted">g</span>`;
 
     const thrEl = document.getElementById(`metric-thr-${dev.id}`);
-    if (thrEl) thrEl.innerHTML = `${dev.threshold.toFixed(1)} <span class="text-slate-500">/</span> ${dev.nominal_rpm}`;
+    if (thrEl) thrEl.innerHTML = `${dev.threshold.toFixed(1)} <span class="text-text-muted">/</span> ${dev.nominal_rpm}`;
 
     const tsEl = document.getElementById(`ts-${dev.id}`);
     if (tsEl) tsEl.textContent = `Обновлено: ${new Date(t.ts * 1000).toLocaleTimeString('ru-RU')}`;
@@ -610,17 +613,11 @@ class GesteresisApp {
   // -------------------- МОДАЛЬНЫЕ ОКНА --------------------
 
   openModal(modalId) {
-    const el = document.getElementById(modalId);
-    if (!el) return;
-    el.classList.remove('hidden');
-    el.classList.add('flex');
+    if (window.modalManager) window.modalManager.open(modalId);
   }
 
   closeModal(modalId) {
-    const el = document.getElementById(modalId);
-    if (!el) return;
-    el.classList.add('hidden');
-    el.classList.remove('flex');
+    if (window.modalManager) window.modalManager.close(modalId);
   }
 
   openDeviceSettingsModal(deviceId) {
@@ -647,231 +644,237 @@ class GesteresisApp {
   // -------------------- ОБРАБОТЧИКИ СОБЫТИЙ --------------------
 
   _bindGlobalEvents() {
-    window.addEventListener('hashchange', () => this._handleRoute());
-    window.addEventListener('resize', () => {
-      if (!window.location.hash.startsWith('#/device/')) {
-        this.state.devices.forEach(dev => {
-          const canvas = document.getElementById(`canvas-${dev.id}`);
-          TelemetryChartRenderer.draw(canvas, dev, null);
-        });
-      }
-    });
+  // Роутинг
+  window.addEventListener('hashchange', () => this._handleRoute());
 
-    // Закрытие модалок по кнопке [data-close-modal] или клику по фону
-    document.querySelectorAll('[data-close-modal]').forEach(btn => {
-      btn.addEventListener('click', () => this.closeModal(btn.getAttribute('data-close-modal')));
-    });
-    document.querySelectorAll('[id^="modal-"]').forEach(modal => {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) this.closeModal(modal.id);
+  // Ресайз: перерисовка canvas
+  window.addEventListener('resize', () => {
+    if (!window.location.hash.startsWith('#/device/')) {
+      this.state.devices.forEach(dev => {
+        const canvas = document.getElementById(`canvas-${dev.id}`);
+        TelemetryChartRenderer.draw(canvas, dev, null);
       });
-    });
+    }
+  });
 
-    // Переключатель Play / Pause live-потока
-    document.getElementById('btn-toggle-stream').addEventListener('click', () => {
-      this.state.isStreaming = !this.state.isStreaming;
-      const dot = document.getElementById('stream-indicator');
-      const label = document.getElementById('stream-label');
-      if (this.state.isStreaming) {
-        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
-        label.textContent = 'LIVE (5s)';
-        this._startTelemetryStream();
-        this.showToast('Поток телеметрии (5 сек) возобновлён', 'info');
-      } else {
-        dot.className = 'w-2 h-2 rounded-full bg-slate-500';
-        label.textContent = 'PAUSED';
-        if (this.unsubscribeStream) this.unsubscribeStream();
-        this.showToast('Обновление графиков поставлено на паузу', 'info');
-      }
-    });
+  // Переключение темы → перерисовать все canvas (chart.js пока на хардкоде,
+  // но перерисовка нужна на Шаге 4; здесь — на будущее)
+  window.addEventListener('theme:changed', () => {
+    if (!window.location.hash.startsWith('#/device/')) {
+      this.state.devices.forEach(dev => {
+        const canvas = document.getElementById(`canvas-${dev.id}`);
+        TelemetryChartRenderer.draw(canvas, dev, this.state.hoverIndices[dev.id] ?? null);
+      });
+    }
+  });
 
-    // Модальное окно подписки
-    document.getElementById('btn-open-sub-modal').addEventListener('click', () => {
-      const dt = this.state.subscription ? new Date(this.state.subscription.expiresAt).toLocaleDateString('ru-RU') : '—';
-      document.getElementById('modal-sub-current-date').textContent = dt;
-      this.openModal('modal-subscription');
-    });
+  // Модалки: обработчики [data-modal-trigger], [data-close-modal], фон, Esc
+  // уже навешаны в ModalManager.init() (js/theme.js).
 
-    document.getElementById('btn-confirm-payment').addEventListener('click', async () => {
-      const selected = document.querySelector('input[name="sub_plan"]:checked');
-      const planId = selected ? selected.value : 'plan_1m';
-      const btn = document.getElementById('btn-confirm-payment');
-      btn.disabled = true;
-      btn.textContent = 'Обработка платежа...';
+  // Переключатель Play / Pause live-потока
+  document.getElementById('btn-toggle-stream')?.addEventListener('click', () => {
+    this.state.isStreaming = !this.state.isStreaming;
+    const dot = document.getElementById('stream-indicator');
+    const label = document.getElementById('stream-label');
+    if (this.state.isStreaming) {
+      dot.className = 'w-2 h-2 rounded-full bg-status-ok animate-ping';
+      label.textContent = 'LIVE (5s)';
+      this._startTelemetryStream();
+      this.showToast('Поток телеметрии (5 сек) возобновлён', 'info');
+    } else {
+      dot.className = 'w-2 h-2 rounded-full bg-text-muted';
+      label.textContent = 'PAUSED';
+      if (this.unsubscribeStream) this.unsubscribeStream();
+      this.showToast('Обновление графиков поставлено на паузу', 'info');
+    }
+  });
 
-      try {
-        const updatedSub = await this.api.createPaymentSession(planId);
-        this.state.subscription = updatedSub;
-        this._renderSubscriptionHeader();
-        this.closeModal('modal-subscription');
-        const newDateStr = new Date(updatedSub.expiresAt).toLocaleDateString('ru-RU');
-        this.showToast(`Подписка успешно продлена до ${newDateStr}`, 'success');
-      } catch (err) {
-        this.showToast(`Ошибка оплаты: ${err.message}`, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Перейти к оплате и продлить подписку';
-      }
-    });
+  // Модальное окно подписки: дата-заполнение при открытии
+  document.querySelector('[data-modal-trigger="modal-subscription"]')?.addEventListener('click', () => {
+    const dt = this.state.subscription
+      ? new Date(this.state.subscription.expiresAt).toLocaleDateString('ru-RU')
+      : '—';
+    const el = document.getElementById('modal-sub-current-date');
+    if (el) el.textContent = dt;
+  });
 
-    // Авторизация / Регистрация
-    document.getElementById('switch-to-register').addEventListener('click', () => {
+  // Кнопка «Оплатить» внутри модалки подписки
+  document.getElementById('btn-confirm-payment')?.addEventListener('click', async () => {
+    const selected = document.querySelector('input[name="sub_plan"]:checked');
+    const planId = selected ? selected.value : 'plan_1m';
+    const btn = document.getElementById('btn-confirm-payment');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Обработка платежа...';
+
+    try {
+      const updatedSub = await this.api.createPaymentSession(planId);
+      this.state.subscription = updatedSub;
+      this._renderSubscriptionHeader();
+      this.closeModal('modal-subscription');
+      const newDateStr = new Date(updatedSub.expiresAt).toLocaleDateString('ru-RU');
+      this.showToast(`Подписка успешно продлена до ${newDateStr}`, 'success');
+    } catch (err) {
+      this.showToast(`Ошибка оплаты: ${err.message}`, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  });
+
+  // Переключение между логином и регистрацией — уже через data-modal-trigger
+  // в HTML, дополнительных обработчиков не нужно.
+
+  // Форма логина
+  document.getElementById('form-login')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-password').value;
+    const errBox = document.getElementById('login-error');
+    errBox.classList.add('hidden');
+    try {
+      this.state.user = await this.api.login(email, pass);
+      this._renderAuthHeader();
       this.closeModal('modal-login');
-      this.openModal('modal-register');
-    });
-    document.getElementById('switch-to-login').addEventListener('click', () => {
+      this.showToast(`Добро пожаловать, ${email}`, 'success');
+    } catch (err) {
+      errBox.textContent = err.message;
+      errBox.classList.remove('hidden');
+    }
+  });
+
+  // Форма регистрации
+  document.getElementById('form-register')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const company = document.getElementById('reg-company').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass = document.getElementById('reg-password').value;
+    const errBox = document.getElementById('register-error');
+    errBox.classList.add('hidden');
+    try {
+      this.state.user = await this.api.register(email, pass, company);
+      this._renderAuthHeader();
       this.closeModal('modal-register');
-      this.openModal('modal-login');
-    });
+      this.showToast('Аккаунт предприятия успешно создан', 'success');
+    } catch (err) {
+      errBox.textContent = err.message;
+      errBox.classList.remove('hidden');
+    }
+  });
 
-    document.getElementById('form-login').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('login-email').value.trim();
-      const pass = document.getElementById('login-password').value;
-      const errBox = document.getElementById('login-error');
-      errBox.classList.add('hidden');
-      try {
-        this.state.user = await this.api.login(email, pass);
-        this._renderAuthHeader();
-        this.closeModal('modal-login');
-        this.showToast(`Добро пожаловать, ${email}`, 'success');
-      } catch (err) {
-        errBox.textContent = err.message;
-        errBox.classList.remove('hidden');
-      }
-    });
+  // Добавление нового чипа (открытие — через data-modal-trigger в HTML)
+  document.getElementById('form-add-chip')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('new-chip-id').value.trim();
+    const name = document.getElementById('new-chip-name').value.trim();
+    const nominal_rpm = document.getElementById('new-chip-rpm').value;
+    const threshold = document.getElementById('new-chip-threshold').value;
+    try {
+      await this.api.addDevice({ id, name, nominal_rpm, threshold });
+      this.closeModal('modal-add-chip');
+      e.target.reset();
+      this._renderDashboard();
+      this.showToast(`Узел ${id} добавлен в мониторинг`, 'success');
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
+  });
 
-    document.getElementById('form-register').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const company = document.getElementById('reg-company').value.trim();
-      const email = document.getElementById('reg-email').value.trim();
-      const pass = document.getElementById('reg-password').value;
-      const errBox = document.getElementById('register-error');
-      errBox.classList.add('hidden');
-      try {
-        this.state.user = await this.api.register(email, pass, company);
-        this._renderAuthHeader();
-        this.closeModal('modal-register');
-        this.showToast('Аккаунт предприятия успешно создан', 'success');
-      } catch (err) {
-        errBox.textContent = err.message;
-        errBox.classList.remove('hidden');
-      }
-    });
+  // Формы внутри модалки настроек чипа
+  document.getElementById('form-device-meta')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = this.state.activeSettingsDeviceId;
+    const name = document.getElementById('input-device-name').value.trim();
+    try {
+      await this.api.updateDeviceMeta(id, { name });
+      const titleEl = document.getElementById(`title-${id}`);
+      if (titleEl) titleEl.textContent = name;
+      this.showToast('Название узла обновлено', 'success');
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
+  });
 
-    // Добавление нового чипа
-    document.getElementById('btn-add-chip').addEventListener('click', () => this.openModal('modal-add-chip'));
-    document.getElementById('form-add-chip').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const id = document.getElementById('new-chip-id').value.trim();
-      const name = document.getElementById('new-chip-name').value.trim();
-      const nominal_rpm = document.getElementById('new-chip-rpm').value;
-      const threshold = document.getElementById('new-chip-threshold').value;
-      try {
-        await this.api.addDevice({ id, name, nominal_rpm, threshold });
-        this.closeModal('modal-add-chip');
-        e.target.reset();
-        this._renderDashboard();
-        this.showToast(`Узел ${id} добавлен в мониторинг`, 'success');
-      } catch (err) {
-        this.showToast(err.message, 'error');
-      }
-    });
+  document.getElementById('form-cmd-threshold')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = this.state.activeSettingsDeviceId;
+    const threshold = parseFloat(document.getElementById('input-cmd-threshold').value);
+    try {
+      const ack = await this.api.sendCommand(id, 'SET_THRESHOLD', { threshold });
+      this._appendSettingsLog(ack);
+      const dev = this.state.devices.find(d => d.id === id);
+      if (dev) this._patchDeviceCard(dev);
+      this._updateKpis();
+      this.showToast(`Порог D_m = ${threshold} отправлен на ${id}`, 'success');
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
+  });
 
-    // Формы внутри модального окна настроек чипа
-    document.getElementById('form-device-meta').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const id = this.state.activeSettingsDeviceId;
-      const name = document.getElementById('input-device-name').value.trim();
-      try {
-        await this.api.updateDeviceMeta(id, { name });
-        const titleEl = document.getElementById(`title-${id}`);
-        if (titleEl) titleEl.textContent = name;
-        this.showToast('Название узла обновлено', 'success');
-      } catch (err) {
-        this.showToast(err.message, 'error');
-      }
-    });
+  document.getElementById('form-cmd-rpm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = this.state.activeSettingsDeviceId;
+    const nominal_rpm = parseInt(document.getElementById('input-cmd-rpm').value, 10);
+    try {
+      const ack = await this.api.sendCommand(id, 'SET_RPM', { nominal_rpm });
+      this._appendSettingsLog(ack);
+      const dev = this.state.devices.find(d => d.id === id);
+      if (dev) this._patchDeviceCard(dev);
+      this.showToast(`Номинал RPM = ${nominal_rpm} отправлен на ${id}`, 'success');
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
+  });
 
-    document.getElementById('form-cmd-threshold').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const id = this.state.activeSettingsDeviceId;
-      const threshold = parseFloat(document.getElementById('input-cmd-threshold').value);
-      try {
-        const ack = await this.api.sendCommand(id, 'SET_THRESHOLD', { threshold });
-        this._appendSettingsLog(ack);
-        const dev = this.state.devices.find(d => d.id === id);
-        if (dev) this._patchDeviceCard(dev);
-        this._updateKpis();
-        this.showToast(`Порог D_m = ${threshold} отправлен на ${id}`, 'success');
-      } catch (err) {
-        this.showToast(err.message, 'error');
-      }
-    });
+  document.getElementById('form-cmd-calibrate')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = this.state.activeSettingsDeviceId;
+    const duration_s = parseInt(document.getElementById('input-calib-duration').value, 10);
+    try {
+      const ack = await this.api.sendCommand(id, 'CALIBRATE', { duration_s });
+      this._appendSettingsLog(ack);
+      const dev = this.state.devices.find(d => d.id === id);
+      if (dev) this._patchDeviceCard(dev);
+      this._updateKpis();
+      this.showToast(`Команда CALIBRATE (${duration_s}с) отправлена на ${id}`, 'info');
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
+  });
 
-    document.getElementById('form-cmd-rpm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const id = this.state.activeSettingsDeviceId;
-      const nominal_rpm = parseInt(document.getElementById('input-cmd-rpm').value, 10);
-      try {
-        const ack = await this.api.sendCommand(id, 'SET_RPM', { nominal_rpm });
-        this._appendSettingsLog(ack);
-        const dev = this.state.devices.find(d => d.id === id);
-        if (dev) this._patchDeviceCard(dev);
-        this.showToast(`Номинал RPM = ${nominal_rpm} отправлен на ${id}`, 'success');
-      } catch (err) {
-        this.showToast(err.message, 'error');
-      }
-    });
+  document.getElementById('btn-cmd-clear-fault')?.addEventListener('click', async () => {
+    const id = this.state.activeSettingsDeviceId;
+    try {
+      const ack = await this.api.sendCommand(id, 'CLEAR_FAULT', {});
+      this._appendSettingsLog(ack);
+      const dev = this.state.devices.find(d => d.id === id);
+      if (dev) this._patchDeviceCard(dev);
+      this._updateKpis();
+      this.showToast(`Ошибка сброшена (CLEAR_FAULT) на ${id}`, 'success');
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
+  });
 
-    document.getElementById('form-cmd-calibrate').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const id = this.state.activeSettingsDeviceId;
-      const duration_s = parseInt(document.getElementById('input-calib-duration').value, 10);
-      try {
-        const ack = await this.api.sendCommand(id, 'CALIBRATE', { duration_s });
-        this._appendSettingsLog(ack);
-        const dev = this.state.devices.find(d => d.id === id);
-        if (dev) this._patchDeviceCard(dev);
-        this._updateKpis();
-        this.showToast(`Команда CALIBRATE (${duration_s}с) отправлена на ${id}`, 'info');
-      } catch (err) {
-        this.showToast(err.message, 'error');
-      }
-    });
+  document.getElementById('btn-cmd-reset')?.addEventListener('click', async () => {
+    const id = this.state.activeSettingsDeviceId;
+    try {
+      const ack = await this.api.sendCommand(id, 'RESET', {});
+      this._appendSettingsLog(ack);
+      const dev = this.state.devices.find(d => d.id === id);
+      if (dev) this._patchDeviceCard(dev);
+      this._updateKpis();
+      this.showToast(`Команда RESET отправлена на ${id}`, 'info');
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
+  });
 
-    document.getElementById('btn-cmd-clear-fault').addEventListener('click', async () => {
-      const id = this.state.activeSettingsDeviceId;
-      try {
-        const ack = await this.api.sendCommand(id, 'CLEAR_FAULT', {});
-        this._appendSettingsLog(ack);
-        const dev = this.state.devices.find(d => d.id === id);
-        if (dev) this._patchDeviceCard(dev);
-        this._updateKpis();
-        this.showToast(`Ошибка сброшена (CLEAR_FAULT) на ${id}`, 'success');
-      } catch (err) {
-        this.showToast(err.message, 'error');
-      }
-    });
-
-    document.getElementById('btn-cmd-reset').addEventListener('click', async () => {
-      const id = this.state.activeSettingsDeviceId;
-      try {
-        const ack = await this.api.sendCommand(id, 'RESET', {});
-        this._appendSettingsLog(ack);
-        const dev = this.state.devices.find(d => d.id === id);
-        if (dev) this._patchDeviceCard(dev);
-        this._updateKpis();
-        this.showToast(`Команда RESET отправлена на ${id}`, 'info');
-      } catch (err) {
-        this.showToast(err.message, 'error');
-      }
-    });
-
-    document.getElementById('btn-clear-cmd-log').addEventListener('click', () => {
-      document.getElementById('settings-cmd-log').textContent = 'Лог очищен.';
-    });
-  }
+  document.getElementById('btn-clear-cmd-log')?.addEventListener('click', () => {
+    const log = document.getElementById('settings-cmd-log');
+    if (log) log.textContent = 'Лог очищен.';
+  });
+}
 
   // -------------------- УВЕДОМЛЕНИЯ (TOASTS) --------------------
 
@@ -879,9 +882,9 @@ class GesteresisApp {
     const container = document.getElementById('toast-container');
     if (!container) return;
     const colors = {
-      success: 'bg-slate-900 border-emerald-500/60 text-emerald-300',
-      error:   'bg-slate-900 border-rose-500/60 text-rose-300',
-      info:    'bg-slate-900 border-cyan-500/60 text-cyan-200',
+      success: 'bg-bg-surface border-status-ok/60 text-status-ok',
+      error:   'bg-bg-surface border-status-alarm/60 text-status-alarm',
+      info:    'bg-bg-surface border-accent/60 text-accent',
     };
     const toast = document.createElement('div');
     toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-xl text-xs font-medium flex items-center justify-between gap-3 transition-all ${colors[type] || colors.info}`;
