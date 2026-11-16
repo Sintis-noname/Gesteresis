@@ -1,22 +1,29 @@
 <!DOCTYPE html>
-<html lang="ru" class="dark">
+<html lang="ru" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GESTERESIS — Edge AI Predictive Diagnostics</title>
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CSS (пока CDN; на Шаге 11 заменим на сборку) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
 
-  <!-- Tailwind config -->
+  <!--
+    Tailwind config — теперь работает через CSS-переменные.
+    Все цвета определены в css/tokens.css и css/themes/*.css.
+    В HTML мы используем семантические классы: bg-bg-surface, text-text-primary и т.д.
+  -->
   <script>
     tailwind.config = {
-      darkMode: 'class',
+      darkMode: ['selector', '[data-theme="dark"]'],
       theme: {
         extend: {
           fontFamily: {
@@ -24,72 +31,117 @@
             mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
-            slate: {
-              850: '#151e2e',
-              900: '#0f172a',
-              950: '#090d16',
-            }
-          }
-        }
-      }
+            bg: {
+              canvas:   'var(--color-bg-canvas)',
+              surface:  'var(--color-bg-surface)',
+              elevated: 'var(--color-bg-elevated)',
+            },
+            border: {
+              subtle: 'var(--color-border-subtle)',
+              strong: 'var(--color-border-strong)',
+            },
+            text: {
+              primary:   'var(--color-text-primary)',
+              secondary: 'var(--color-text-secondary)',
+              muted:     'var(--color-text-muted)',
+            },
+            accent: {
+              DEFAULT: 'var(--color-accent-primary)',
+              danger:  'var(--color-accent-danger)',
+            },
+            status: {
+              ok:    'var(--color-status-ok)',
+              alarm: 'var(--color-status-alarm)',
+              warn:  'var(--color-status-warn)',
+              calib: 'var(--color-status-calib)',
+            },
+          },
+          borderRadius: {
+            card:    'var(--radius-card)',
+            control: 'var(--radius-control)',
+          },
+        },
+      },
     };
   </script>
 
-  <!-- Custom styles -->
+  <!-- Дизайн-токены и темы (подключаются ДО style.css) -->
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/themes/dark.css" />
+  <link rel="stylesheet" href="css/themes/light.css" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+
+<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-accent/30 selection:text-accent">
 
   <!-- ==================== TOP NAVBAR ==================== -->
-  <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/90">
+  <header class="sticky top-0 z-40 bg-bg-canvas/90 backdrop-blur-md border-b border-border-subtle">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex flex-wrap items-center justify-between gap-4 py-3.5">
 
         <!-- Логотип и название -->
         <a href="#/" class="flex items-center gap-3 group focus:outline-none">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 flex items-center justify-center shadow-inner group-hover:border-cyan-400 transition">
-            <svg class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <div class="w-10 h-10 rounded-xl bg-accent/15 border border-accent/40 flex items-center justify-center shadow-inner group-hover:border-accent transition">
+            <svg class="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 12h1.5l1-3 2 6 1-3H15" />
             </svg>
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="font-mono font-bold text-lg tracking-wider text-white">GESTERESIS</span>
-              <span class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">v0.4 Edge AI</span>
+              <span class="font-mono font-bold text-lg tracking-wider text-text-primary">GESTERESIS</span>
+              <span class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-accent/10 text-accent border border-accent/30">v0.6 Edge AI</span>
             </div>
-            <p class="text-xs text-slate-400">Edge AI Predictive Diagnostics</p>
+            <p class="text-xs text-text-secondary">Edge AI Predictive Diagnostics</p>
           </div>
         </a>
 
-        <!-- Блок подписки (Дата окончания + Кнопка оплаты) -->
-        <div class="flex flex-wrap items-center gap-3 bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2">
+        <!-- Блок подписки (заполняется из _renderSubscriptionHeader) -->
+        <div class="flex flex-wrap items-center gap-3 bg-bg-surface border border-border-subtle rounded-xl px-3.5 py-2">
           <div class="flex items-center gap-2">
-            <span id="sub-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span id="sub-status-dot" class="w-2.5 h-2.5 rounded-full bg-status-ok"></span>
             <div class="text-xs">
-              <span class="text-slate-400 block sm:inline">Подписка активна до: </span>
-              <span id="sub-expiry-date" class="font-mono font-semibold text-slate-100">Загрузка...</span>
+              <span class="text-text-secondary block sm:inline">Подписка активна до: </span>
+              <span id="sub-expiry-date" class="font-mono font-semibold text-text-primary">Загрузка...</span>
             </div>
           </div>
-          <button id="btn-open-sub-modal" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-sm shadow-amber-500/20 transition cursor-pointer">
+          <button
+            type="button"
+            data-modal-trigger="modal-subscription"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-bg-canvas hover:opacity-90 shadow-sm transition cursor-pointer"
+          >
             Оплатить подписку
           </button>
         </div>
 
-        <!-- Блок управления потоком и авторизации -->
+        <!-- Блок управления потоком + переключатель темы + авторизация -->
         <div class="flex items-center gap-2.5">
-          <button id="btn-toggle-stream" type="button" title="Управление потоком телеметрии (интервал 5 сек)" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 transition cursor-pointer">
-            <span id="stream-indicator" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <!-- Переключатель темы (обработчик в js/theme.js) -->
+          <button
+            id="btn-toggle-theme"
+            type="button"
+            title="Переключить тему"
+            class="flex items-center justify-center w-9 h-9 rounded-xl bg-bg-surface hover:bg-bg-elevated border border-border-subtle text-text-secondary transition cursor-pointer"
+          >
+            <svg id="theme-icon-dark" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+            </svg>
+            <svg id="theme-icon-light" class="w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+            </svg>
+          </button>
+
+          <button
+            id="btn-toggle-stream"
+            type="button"
+            title="Управление потоком телеметрии"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono bg-bg-surface hover:bg-bg-elevated border border-border-subtle text-text-secondary transition cursor-pointer"
+          >
+            <span id="stream-indicator" class="w-2 h-2 rounded-full bg-status-ok animate-ping"></span>
             <span id="stream-label">LIVE (5s)</span>
           </button>
 
-          <div id="auth-controls" class="flex items-center gap-2">
-            <button id="btn-open-login" type="button" class="px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer">
-              Войти
-            </button>
-            <button id="btn-open-register" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm shadow-cyan-500/20 transition cursor-pointer">
-              Регистрация
-            </button>
-          </div>
+          <!-- Контейнер авторизации: пустой! Всё рендерит _renderAuthHeader() -->
+          <div id="auth-controls" class="flex items-center gap-2"></div>
         </div>
 
       </div>
@@ -103,64 +155,68 @@
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
     <!-- Индикатор загрузки приложения -->
-    <div id="global-loader" class="hidden py-20 flex flex-col items-center justify-center text-slate-400">
-      <div class="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin mb-3"></div>
+    <div id="global-loader" class="hidden py-20 flex flex-col items-center justify-center text-text-secondary">
+      <div class="w-10 h-10 border-2 border-accent/30 border-t-accent rounded-full animate-spin mb-3"></div>
       <p class="font-mono text-sm">Подключение к брокеру телеметрии Gesteresis...</p>
     </div>
 
     <!-- VIEW 1: ОСНОВНОЙ ДАШБОРД ЧИПОВ -->
-    <section id="view-dashboard" class="space-y-6">
+    <section id="view-dashboard" data-view="dashboard" class="space-y-6">
 
       <!-- Панель сводных KPI -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
+        <div class="bg-bg-surface border border-border-subtle rounded-card p-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Всего узлов ESP32</span>
-            <span class="p-1.5 rounded-lg bg-slate-800 text-cyan-400 font-mono text-xs">MCU</span>
+            <span class="text-xs font-medium text-text-secondary uppercase tracking-wider">Всего узлов ESP32</span>
+            <span class="p-1.5 rounded-lg bg-bg-elevated text-accent font-mono text-xs">MCU</span>
           </div>
-          <div id="kpi-total" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-white">0</div>
-          <p class="mt-1 text-xs text-slate-500">Топик: <code class="text-slate-400">p11/gesteresis/+</code></p>
+          <div id="kpi-total" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-text-primary">0</div>
+          <p class="mt-1 text-xs text-text-muted">Топик: <code class="text-text-secondary">p11/gesteresis/+</code></p>
         </div>
 
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
+        <div class="bg-bg-surface border border-border-subtle rounded-card p-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">В норме (OK)</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span class="text-xs font-medium text-text-secondary uppercase tracking-wider">В норме (OK)</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-status-ok"></span>
           </div>
-          <div id="kpi-ok" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-emerald-400">0</div>
-          <p class="mt-1 text-xs text-slate-500">D_m ≤ threshold</p>
+          <div id="kpi-ok" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-status-ok">0</div>
+          <p class="mt-1 text-xs text-text-muted">D_m ≤ threshold</p>
         </div>
 
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
+        <div class="bg-bg-surface border border-border-subtle rounded-card p-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Тревога (ALARM)</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+            <span class="text-xs font-medium text-text-secondary uppercase tracking-wider">Тревога (ALARM)</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-status-alarm"></span>
           </div>
-          <div id="kpi-alarm" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-rose-400">0</div>
-          <p class="mt-1 text-xs text-slate-500">Превышение порога D_m</p>
+          <div id="kpi-alarm" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-status-alarm">0</div>
+          <p class="mt-1 text-xs text-text-muted">Превышение порога D_m</p>
         </div>
 
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
+        <div class="bg-bg-surface border border-border-subtle rounded-card p-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Калибровка / Ошибки</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+            <span class="text-xs font-medium text-text-secondary uppercase tracking-wider">Калибровка / Ошибки</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-status-warn"></span>
           </div>
-          <div id="kpi-warn" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-amber-400">0</div>
-          <p class="mt-1 text-xs text-slate-500">CALIBRATING / FAULT / Flags</p>
+          <div id="kpi-warn" class="mt-2 font-mono text-2xl sm:text-3xl font-bold text-status-warn">0</div>
+          <p class="mt-1 text-xs text-text-muted">CALIBRATING / FAULT / Flags</p>
         </div>
       </div>
 
-      <!-- Заголовок списка чипов + кнопка добавления нового чипа -->
+      <!-- Заголовок списка чипов + кнопка добавления -->
       <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
         <div>
-          <h1 class="text-lg sm:text-xl font-bold text-white">Мониторинг узлов диагностики (ESP32-S3)</h1>
-          <p class="text-xs sm:text-sm text-slate-400">Расстояние Махаланобиса D_m в реальном времени, фильтр Калмана (1D) и управление моделями NVS</p>
+          <h1 class="text-lg sm:text-xl font-bold text-text-primary">Мониторинг узлов диагностики (ESP32-S3)</h1>
+          <p class="text-xs sm:text-sm text-text-secondary">Расстояние Махаланобиса D_m в реальном времени, фильтр Калмана (1D) и управление моделями NVS</p>
         </div>
         <div class="flex items-center gap-2">
-          <span id="backend-mode-badge" class="px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-900 border border-slate-700 text-slate-400">
+          <span id="backend-mode-badge" class="px-2.5 py-1.5 rounded-lg text-xs font-mono bg-bg-surface border border-border-subtle text-text-secondary">
             MODE: MOCK_STREAM
           </span>
-          <button id="btn-add-chip" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 transition cursor-pointer">
+          <button
+            type="button"
+            data-modal-trigger="modal-add-chip"
+            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-bg-surface hover:bg-bg-elevated text-accent border border-accent/30 transition cursor-pointer"
+          >
             + Добавить чип
           </button>
         </div>
@@ -168,49 +224,49 @@
 
       <!-- Сетка карточек чипов -->
       <div id="devices-grid" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <!-- Карточки чипов рендерятся через JS -->
+        <!-- Карточки рендерятся через JS -->
       </div>
 
     </section>
 
     <!-- VIEW 2: СТРАНИЦА ДЕТАЛЬНОЙ ИНФОРМАЦИИ О ЧИПЕ -->
-    <section id="view-device-detail" class="hidden space-y-6">
+    <section id="view-device-detail" data-view="device-detail" class="hidden space-y-6">
       <!-- Рендерится динамически при переходе на #/device/{id} -->
     </section>
 
   </main>
 
   <!-- ==================== FOOTER ==================== -->
-  <footer class="border-t border-slate-800/80 bg-slate-950/70 py-4 mt-10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 font-mono">
+  <footer class="border-t border-border-subtle bg-bg-canvas/70 py-4 mt-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-text-muted font-mono">
       <div>GESTERESIS EDGE AI SYSTEM • PROTOCOL v0.3 (ADR-0003 / ADR-0004)</div>
       <div>CALIBRATION BLOB: 644 BYTES (NVS) • DIM: 12 FEATURES</div>
     </div>
   </footer>
 
-  <!-- ==================== MODAL: НАСТРОЙКИ ЧИПА (MQTT CMD) ==================== -->
-  <div id="modal-settings" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
+  <!-- ==================== MODAL: НАСТРОЙКИ ЧИПА ==================== -->
+  <div id="modal-settings" class="fixed inset-0 z-50 hidden items-center justify-center bg-bg-canvas/80 backdrop-blur-sm p-4">
+    <div class="bg-bg-surface border border-border-strong rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border-subtle bg-bg-canvas/50">
         <div>
-          <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <h3 class="text-base font-bold text-text-primary flex items-center gap-2">
             <span>Настройки и команды устройства</span>
-            <span id="settings-device-id-badge" class="px-2 py-0.5 text-xs font-mono rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">unit_001</span>
+            <span id="settings-device-id-badge" class="px-2 py-0.5 text-xs font-mono rounded bg-accent/15 text-accent border border-accent/30">unit_001</span>
           </h3>
-          <p class="text-xs text-slate-400 font-mono mt-0.5">Топик команд: p11/gesteresis/<span id="settings-topic-id">unit_001</span>/cmd</p>
+          <p class="text-xs text-text-secondary font-mono mt-0.5">Топик команд: p11/gesteresis/<span id="settings-topic-id">unit_001</span>/cmd</p>
         </div>
-        <button type="button" data-close-modal="modal-settings" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+        <button type="button" data-close-modal="modal-settings" class="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition cursor-pointer">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
 
       <div class="p-5 overflow-y-auto space-y-5">
         <!-- Переименование узла -->
-        <form id="form-device-meta" class="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-          <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Метаданные узла (БД сервера)</div>
+        <form id="form-device-meta" class="space-y-3 bg-bg-canvas/60 p-4 rounded-xl border border-border-subtle">
+          <div class="text-xs font-semibold uppercase tracking-wider text-text-secondary">Метаданные узла (БД сервера)</div>
           <div class="flex flex-col sm:flex-row gap-2">
-            <input id="input-device-name" type="text" required placeholder="Название агрегата" class="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
-            <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition cursor-pointer">
+            <input id="input-device-name" type="text" required placeholder="Название агрегата" class="flex-1 px-3 py-2 rounded-lg bg-bg-canvas border border-border-strong text-sm text-text-primary focus:outline-none focus:border-accent" />
+            <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold bg-bg-elevated hover:bg-bg-surface text-text-primary border border-border-strong transition cursor-pointer">
               Сохранить имя
             </button>
           </div>
@@ -218,44 +274,44 @@
 
         <!-- Команды SET_THRESHOLD и SET_RPM -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <form id="form-cmd-threshold" class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-2.5">
+          <form id="form-cmd-threshold" class="bg-bg-canvas/60 p-4 rounded-xl border border-border-subtle space-y-2.5">
             <div class="flex items-center justify-between">
-              <label for="input-cmd-threshold" class="text-xs font-semibold text-slate-300">Порог D_m (threshold)</label>
-              <span class="text-[11px] font-mono text-cyan-400">SET_THRESHOLD</span>
+              <label for="input-cmd-threshold" class="text-xs font-semibold text-text-primary">Порог D_m (threshold)</label>
+              <span class="text-[11px] font-mono text-accent">SET_THRESHOLD</span>
             </div>
-            <input id="input-cmd-threshold" type="number" step="0.1" min="0.5" max="50" required class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-cyan-500" />
-            <button type="submit" class="w-full py-2 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition cursor-pointer">
+            <input id="input-cmd-threshold" type="number" step="0.1" min="0.5" max="50" required class="w-full px-3 py-2 rounded-lg bg-bg-canvas border border-border-strong font-mono text-sm text-text-primary focus:outline-none focus:border-accent" />
+            <button type="submit" class="w-full py-2 rounded-lg text-xs font-semibold bg-accent text-bg-canvas hover:opacity-90 transition cursor-pointer">
               Применить порог (NVS)
             </button>
           </form>
 
-          <form id="form-cmd-rpm" class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-2.5">
+          <form id="form-cmd-rpm" class="bg-bg-canvas/60 p-4 rounded-xl border border-border-subtle space-y-2.5">
             <div class="flex items-center justify-between">
-              <label for="input-cmd-rpm" class="text-xs font-semibold text-slate-300">Номинал RPM</label>
-              <span class="text-[11px] font-mono text-cyan-400">SET_RPM</span>
+              <label for="input-cmd-rpm" class="text-xs font-semibold text-text-primary">Номинал RPM</label>
+              <span class="text-[11px] font-mono text-accent">SET_RPM</span>
             </div>
-            <input id="input-cmd-rpm" type="number" step="10" min="0" max="30000" required class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-cyan-500" />
-            <button type="submit" class="w-full py-2 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition cursor-pointer">
+            <input id="input-cmd-rpm" type="number" step="10" min="0" max="30000" required class="w-full px-3 py-2 rounded-lg bg-bg-canvas border border-border-strong font-mono text-sm text-text-primary focus:outline-none focus:border-accent" />
+            <button type="submit" class="w-full py-2 rounded-lg text-xs font-semibold bg-accent text-bg-canvas hover:opacity-90 transition cursor-pointer">
               Обновить RPM (бины 9,10)
             </button>
           </form>
         </div>
 
         <!-- Калибровка CALIBRATE -->
-        <form id="form-cmd-calibrate" class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
+        <form id="form-cmd-calibrate" class="bg-bg-canvas/60 p-4 rounded-xl border border-border-subtle space-y-3">
           <div class="flex items-center justify-between">
             <div>
-              <div class="text-xs font-semibold text-slate-200">Автономная калибровка модели (A1 MCU-first)</div>
-              <p class="text-[11px] text-slate-400">Сбор нормальных окон, расчёт µ, S⁻¹, threshold и запись CalibrationBlob</p>
+              <div class="text-xs font-semibold text-text-primary">Автономная калибровка модели (A1 MCU-first)</div>
+              <p class="text-[11px] text-text-secondary">Сбор нормальных окон, расчёт µ, S⁻¹, threshold и запись CalibrationBlob</p>
             </div>
-            <span class="text-[11px] font-mono text-amber-400">CALIBRATE</span>
+            <span class="text-[11px] font-mono text-status-warn">CALIBRATE</span>
           </div>
           <div class="flex flex-col sm:flex-row gap-2">
             <div class="flex items-center gap-2 flex-1">
-              <label for="input-calib-duration" class="text-xs text-slate-400 whitespace-nowrap">Длительность (сек):</label>
-              <input id="input-calib-duration" type="number" min="5" max="300" value="30" required class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-amber-500" />
+              <label for="input-calib-duration" class="text-xs text-text-secondary whitespace-nowrap">Длительность (сек):</label>
+              <input id="input-calib-duration" type="number" min="5" max="300" value="30" required class="w-full px-3 py-2 rounded-lg bg-bg-canvas border border-border-strong font-mono text-sm text-text-primary focus:outline-none focus:border-status-warn" />
             </div>
-            <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer">
+            <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold bg-status-warn text-bg-canvas hover:opacity-90 transition cursor-pointer">
               Запустить калибровку
             </button>
           </div>
@@ -263,81 +319,81 @@
 
         <!-- Системные команды CLEAR_FAULT / RESET -->
         <div class="grid grid-cols-2 gap-3">
-          <button id="btn-cmd-clear-fault" type="button" class="py-2.5 px-3 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition cursor-pointer">
+          <button id="btn-cmd-clear-fault" type="button" class="py-2.5 px-3 rounded-xl text-xs font-semibold bg-status-ok/15 hover:bg-status-ok/25 text-status-ok border border-status-ok/30 transition cursor-pointer">
             CLEAR_FAULT (Сброс latch)
           </button>
-          <button id="btn-cmd-reset" type="button" class="py-2.5 px-3 rounded-xl text-xs font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition cursor-pointer">
+          <button id="btn-cmd-reset" type="button" class="py-2.5 px-3 rounded-xl text-xs font-semibold bg-status-alarm/15 hover:bg-status-alarm/25 text-status-alarm border border-status-alarm/30 transition cursor-pointer">
             RESET (Перезагрузка ESP32)
           </button>
         </div>
 
         <!-- Лог ответов устройства -->
         <div class="space-y-1.5">
-          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+          <div class="flex items-center justify-between text-[11px] font-mono text-text-secondary">
             <span>ЛОГ ОТВЕТОВ УСТРОЙСТВА (model_ack / status)</span>
-            <button id="btn-clear-cmd-log" type="button" class="text-slate-500 hover:text-slate-300 cursor-pointer">Очистить</button>
+            <button id="btn-clear-cmd-log" type="button" class="text-text-muted hover:text-text-primary cursor-pointer">Очистить</button>
           </div>
-          <pre id="settings-cmd-log" class="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[11px] text-emerald-400 max-h-32 overflow-y-auto whitespace-pre-wrap">Ожидание команд...</pre>
+          <pre id="settings-cmd-log" class="p-3 rounded-xl bg-bg-canvas border border-border-subtle font-mono text-[11px] text-status-ok max-h-32 overflow-y-auto whitespace-pre-wrap">Ожидание команд...</pre>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ==================== MODAL: ОПЛАТА ПОДПИСКИ ==================== -->
-  <div id="modal-subscription" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
+  <div id="modal-subscription" class="fixed inset-0 z-50 hidden items-center justify-center bg-bg-canvas/80 backdrop-blur-sm p-4">
+    <div class="bg-bg-surface border border-border-strong rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border-subtle bg-bg-canvas/50">
         <div>
-          <h3 class="text-base font-bold text-white">Управление подпиской Gesteresis Cloud</h3>
-          <p class="text-xs text-slate-400">Продление доступа к MQTT-брокеру, телеметрии и Server-Refinement (A2)</p>
+          <h3 class="text-base font-bold text-text-primary">Управление подпиской Gesteresis Cloud</h3>
+          <p class="text-xs text-text-secondary">Продление доступа к MQTT-брокеру, телеметрии и Server-Refinement (A2)</p>
         </div>
-        <button type="button" data-close-modal="modal-subscription" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+        <button type="button" data-close-modal="modal-subscription" class="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition cursor-pointer">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
 
       <div class="p-5 space-y-4">
-        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-          <span class="text-xs text-slate-400">Текущая дата окончания:</span>
-          <span id="modal-sub-current-date" class="font-mono text-sm font-bold text-amber-400">—</span>
+        <div class="p-3.5 rounded-xl bg-bg-canvas border border-border-subtle flex items-center justify-between">
+          <span class="text-xs text-text-secondary">Текущая дата окончания:</span>
+          <span id="modal-sub-current-date" class="font-mono text-sm font-bold text-status-warn">—</span>
         </div>
 
         <div class="space-y-2.5" id="subscription-plans-list">
-          <label class="flex items-center justify-between p-3.5 rounded-xl border border-slate-700 bg-slate-950/50 hover:border-cyan-500/60 cursor-pointer transition">
+          <label class="flex items-center justify-between p-3.5 rounded-xl border border-border-strong bg-bg-canvas/50 hover:border-accent/60 cursor-pointer transition">
             <div class="flex items-center gap-3">
-              <input type="radio" name="sub_plan" value="plan_1m" checked class="accent-cyan-500 w-4 h-4" />
+              <input type="radio" name="sub_plan" value="plan_1m" checked class="accent-accent w-4 h-4" />
               <div>
-                <div class="text-sm font-semibold text-white">Базовый цех — 1 месяц (+30 дней)</div>
-                <div class="text-xs text-slate-400">До 5 чипов ESP32-S3, телеметрия и хранение логов</div>
+                <div class="text-sm font-semibold text-text-primary">Базовый цех — 1 месяц (+30 дней)</div>
+                <div class="text-xs text-text-secondary">До 5 чипов ESP32-S3, телеметрия и хранение логов</div>
               </div>
             </div>
-            <span class="font-mono font-bold text-cyan-400 text-sm">4 900 ₽</span>
+            <span class="font-mono font-bold text-accent text-sm">4 900 ₽</span>
           </label>
 
-          <label class="flex items-center justify-between p-3.5 rounded-xl border border-slate-700 bg-slate-950/50 hover:border-cyan-500/60 cursor-pointer transition">
+          <label class="flex items-center justify-between p-3.5 rounded-xl border border-border-strong bg-bg-canvas/50 hover:border-accent/60 cursor-pointer transition">
             <div class="flex items-center gap-3">
-              <input type="radio" name="sub_plan" value="plan_6m" class="accent-cyan-500 w-4 h-4" />
+              <input type="radio" name="sub_plan" value="plan_6m" class="accent-accent w-4 h-4" />
               <div>
-                <div class="text-sm font-semibold text-white">Промышленный — 6 месяцев (+180 дней)</div>
-                <div class="text-xs text-slate-400">До 25 чипов, Server-refinement моделей (NumPy), режим аудита C</div>
+                <div class="text-sm font-semibold text-text-primary">Промышленный — 6 месяцев (+180 дней)</div>
+                <div class="text-xs text-text-secondary">До 25 чипов, Server-refinement моделей (NumPy), режим аудита C</div>
               </div>
             </div>
-            <span class="font-mono font-bold text-cyan-400 text-sm">24 900 ₽</span>
+            <span class="font-mono font-bold text-accent text-sm">24 900 ₽</span>
           </label>
 
-          <label class="flex items-center justify-between p-3.5 rounded-xl border border-slate-700 bg-slate-950/50 hover:border-cyan-500/60 cursor-pointer transition">
+          <label class="flex items-center justify-between p-3.5 rounded-xl border border-border-strong bg-bg-canvas/50 hover:border-accent/60 cursor-pointer transition">
             <div class="flex items-center gap-3">
-              <input type="radio" name="sub_plan" value="plan_12m" class="accent-cyan-500 w-4 h-4" />
+              <input type="radio" name="sub_plan" value="plan_12m" class="accent-accent w-4 h-4" />
               <div>
-                <div class="text-sm font-semibold text-white">Корпоративный — 12 месяцев (+365 дней)</div>
-                <div class="text-xs text-slate-400">Безлимит узлов, OTA-раздача прошивок, приоритетная поддержка</div>
+                <div class="text-sm font-semibold text-text-primary">Корпоративный — 12 месяцев (+365 дней)</div>
+                <div class="text-xs text-text-secondary">Безлимит узлов, OTA-раздача прошивок, приоритетная поддержка</div>
               </div>
             </div>
-            <span class="font-mono font-bold text-cyan-400 text-sm">44 900 ₽</span>
+            <span class="font-mono font-bold text-accent text-sm">44 900 ₽</span>
           </label>
         </div>
 
-        <button id="btn-confirm-payment" type="button" class="w-full py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-lg shadow-amber-500/20 transition cursor-pointer">
+        <button id="btn-confirm-payment" type="button" class="w-full py-3 rounded-xl text-sm font-bold bg-accent text-bg-canvas hover:opacity-90 shadow-lg transition cursor-pointer">
           Перейти к оплате и продлить подписку
         </button>
       </div>
@@ -345,96 +401,98 @@
   </div>
 
   <!-- ==================== MODAL: АВТОРИЗАЦИЯ (ВХОД) ==================== -->
-  <div id="modal-login" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
-        <h3 class="text-base font-bold text-white">Вход в систему Gesteresis</h3>
-        <button type="button" data-close-modal="modal-login" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+  <div id="modal-login" class="fixed inset-0 z-50 hidden items-center justify-center bg-bg-canvas/80 backdrop-blur-sm p-4">
+    <div class="bg-bg-surface border border-border-strong rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border-subtle bg-bg-canvas/50">
+        <h3 class="text-base font-bold text-text-primary">Вход в систему Gesteresis</h3>
+        <button type="button" data-close-modal="modal-login" class="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition cursor-pointer">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
       <form id="form-login" class="p-5 space-y-4">
         <div>
-          <label for="login-email" class="block text-xs font-medium text-slate-300 mb-1">Рабочий Email</label>
-          <input id="login-email" type="email" required value="engineer@plant-p11.ru" placeholder="engineer@company.ru" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <label for="login-email" class="block text-xs font-medium text-text-primary mb-1">Рабочий Email</label>
+          <input id="login-email" type="email" required placeholder="engineer@company.ru" class="w-full px-3.5 py-2.5 rounded-xl bg-bg-canvas border border-border-strong text-sm text-text-primary focus:outline-none focus:border-accent" />
         </div>
         <div>
-          <label for="login-password" class="block text-xs font-medium text-slate-300 mb-1">Пароль</label>
-          <input id="login-password" type="password" required value="••••••••" placeholder="Введите пароль" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <label for="login-password" class="block text-xs font-medium text-text-primary mb-1">Пароль</label>
+          <input id="login-password" type="password" required placeholder="Введите пароль" class="w-full px-3.5 py-2.5 rounded-xl bg-bg-canvas border border-border-strong text-sm text-text-primary focus:outline-none focus:border-accent" />
         </div>
-        <div id="login-error" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 p-2.5 rounded-lg"></div>
-        <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition cursor-pointer">
+        <div id="login-error" class="hidden text-xs text-status-alarm bg-status-alarm/10 border border-status-alarm/30 p-2.5 rounded-lg"></div>
+        <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold bg-accent text-bg-canvas hover:opacity-90 transition cursor-pointer">
           Войти в панель управления
         </button>
-        <p class="text-center text-xs text-slate-400">
-          Нет аккаунта? <button type="button" id="switch-to-register" class="text-cyan-400 hover:underline cursor-pointer">Зарегистрировать предприятие</button>
+        <p class="text-center text-xs text-text-secondary">
+          Нет аккаунта?
+          <button type="button" data-modal-trigger="modal-register" data-close-modal="modal-login" class="text-accent hover:underline cursor-pointer">Зарегистрировать предприятие</button>
         </p>
       </form>
     </div>
   </div>
 
   <!-- ==================== MODAL: РЕГИСТРАЦИЯ ==================== -->
-  <div id="modal-register" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
-        <h3 class="text-base font-bold text-white">Регистрация в Gesteresis</h3>
-        <button type="button" data-close-modal="modal-register" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+  <div id="modal-register" class="fixed inset-0 z-50 hidden items-center justify-center bg-bg-canvas/80 backdrop-blur-sm p-4">
+    <div class="bg-bg-surface border border-border-strong rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border-subtle bg-bg-canvas/50">
+        <h3 class="text-base font-bold text-text-primary">Регистрация в Gesteresis</h3>
+        <button type="button" data-close-modal="modal-register" class="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition cursor-pointer">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
       <form id="form-register" class="p-5 space-y-4">
         <div>
-          <label for="reg-company" class="block text-xs font-medium text-slate-300 mb-1">Предприятие / Цех</label>
-          <input id="reg-company" type="text" required placeholder="ООО «ПромСтанкоСервис»" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <label for="reg-company" class="block text-xs font-medium text-text-primary mb-1">Предприятие / Цех</label>
+          <input id="reg-company" type="text" required placeholder="ООО «ПромСтанкоСервис»" class="w-full px-3.5 py-2.5 rounded-xl bg-bg-canvas border border-border-strong text-sm text-text-primary focus:outline-none focus:border-accent" />
         </div>
         <div>
-          <label for="reg-email" class="block text-xs font-medium text-slate-300 mb-1">Email инженера / администратора</label>
-          <input id="reg-email" type="email" required placeholder="admin@plant.ru" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <label for="reg-email" class="block text-xs font-medium text-text-primary mb-1">Email инженера / администратора</label>
+          <input id="reg-email" type="email" required placeholder="admin@plant.ru" class="w-full px-3.5 py-2.5 rounded-xl bg-bg-canvas border border-border-strong text-sm text-text-primary focus:outline-none focus:border-accent" />
         </div>
         <div>
-          <label for="reg-password" class="block text-xs font-medium text-slate-300 mb-1">Пароль (минимум 6 символов)</label>
-          <input id="reg-password" type="password" minlength="6" required placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <label for="reg-password" class="block text-xs font-medium text-text-primary mb-1">Пароль (минимум 6 символов)</label>
+          <input id="reg-password" type="password" minlength="6" required placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl bg-bg-canvas border border-border-strong text-sm text-text-primary focus:outline-none focus:border-accent" />
         </div>
-        <div id="register-error" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 p-2.5 rounded-lg"></div>
-        <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition cursor-pointer">
+        <div id="register-error" class="hidden text-xs text-status-alarm bg-status-alarm/10 border border-status-alarm/30 p-2.5 rounded-lg"></div>
+        <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold bg-accent text-bg-canvas hover:opacity-90 transition cursor-pointer">
           Создать аккаунт
         </button>
-        <p class="text-center text-xs text-slate-400">
-          Уже зарегистрированы? <button type="button" id="switch-to-login" class="text-cyan-400 hover:underline cursor-pointer">Войти</button>
+        <p class="text-center text-xs text-text-secondary">
+          Уже зарегистрированы?
+          <button type="button" data-modal-trigger="modal-login" data-close-modal="modal-register" class="text-accent hover:underline cursor-pointer">Войти</button>
         </p>
       </form>
     </div>
   </div>
 
   <!-- ==================== MODAL: ДОБАВИТЬ НОВЫЙ ЧИП ==================== -->
-  <div id="modal-add-chip" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/50">
-        <h3 class="text-base font-bold text-white">Регистрация нового узла ESP32-S3</h3>
-        <button type="button" data-close-modal="modal-add-chip" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+  <div id="modal-add-chip" class="fixed inset-0 z-50 hidden items-center justify-center bg-bg-canvas/80 backdrop-blur-sm p-4">
+    <div class="bg-bg-surface border border-border-strong rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border-subtle bg-bg-canvas/50">
+        <h3 class="text-base font-bold text-text-primary">Регистрация нового узла ESP32-S3</h3>
+        <button type="button" data-close-modal="modal-add-chip" class="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition cursor-pointer">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
       <form id="form-add-chip" class="p-5 space-y-4">
         <div>
-          <label for="new-chip-id" class="block text-xs font-medium text-slate-300 mb-1">ID устройства (MQTT топик)</label>
-          <input id="new-chip-id" type="text" required pattern="[a-zA-Z0-9_-]+" placeholder="unit_006" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <label for="new-chip-id" class="block text-xs font-medium text-text-primary mb-1">ID устройства (MQTT топик)</label>
+          <input id="new-chip-id" type="text" required pattern="[a-zA-Z0-9_-]+" placeholder="unit_006" class="w-full px-3.5 py-2.5 rounded-xl bg-bg-canvas border border-border-strong font-mono text-sm text-text-primary focus:outline-none focus:border-accent" />
         </div>
         <div>
-          <label for="new-chip-name" class="block text-xs font-medium text-slate-300 mb-1">Название станка / узла</label>
-          <input id="new-chip-name" type="text" required placeholder="Шлифовальный станок #3" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-500" />
+          <label for="new-chip-name" class="block text-xs font-medium text-text-primary mb-1">Название станка / узла</label>
+          <input id="new-chip-name" type="text" required placeholder="Шлифовальный станок #3" class="w-full px-3.5 py-2.5 rounded-xl bg-bg-canvas border border-border-strong text-sm text-text-primary focus:outline-none focus:border-accent" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label for="new-chip-rpm" class="block text-xs font-medium text-slate-300 mb-1">Номинал RPM</label>
-            <input id="new-chip-rpm" type="number" value="1500" min="0" max="30000" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-cyan-500" />
+            <label for="new-chip-rpm" class="block text-xs font-medium text-text-primary mb-1">Номинал RPM</label>
+            <input id="new-chip-rpm" type="number" value="1500" min="0" max="30000" required class="w-full px-3.5 py-2.5 rounded-xl bg-bg-canvas border border-border-strong font-mono text-sm text-text-primary focus:outline-none focus:border-accent" />
           </div>
           <div>
-            <label for="new-chip-threshold" class="block text-xs font-medium text-slate-300 mb-1">Порог D_m</label>
-            <input id="new-chip-threshold" type="number" step="0.1" value="3.5" min="0.5" max="50" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 font-mono text-sm text-white focus:outline-none focus:border-cyan-500" />
+            <label for="new-chip-threshold" class="block text-xs font-medium text-text-primary mb-1">Порог D_m</label>
+            <input id="new-chip-threshold" type="number" step="0.1" value="3.5" min="0.5" max="50" required class="w-full px-3.5 py-2.5 rounded-xl bg-bg-canvas border border-border-strong font-mono text-sm text-text-primary focus:outline-none focus:border-accent" />
           </div>
         </div>
-        <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition cursor-pointer">
+        <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold bg-accent text-bg-canvas hover:opacity-90 transition cursor-pointer">
           Подключить устройство
         </button>
       </form>
@@ -442,8 +500,8 @@
   </div>
 
   <!-- ==================== APPLICATION SCRIPTS ==================== -->
-  <!-- Порядок подключения критичен: config → api → chart → app -->
   <script src="js/config.js"></script>
+  <script src="js/theme.js"></script>
   <script src="js/api.js"></script>
   <script src="js/chart.js"></script>
   <script src="js/app.js"></script>
