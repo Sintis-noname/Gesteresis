@@ -1,0 +1,48 @@
+/* ==========================================================================
+   GESTERESIS — Theme: Dark (css/themes/dark.css)
+   --------------------------------------------------------------------------
+   Применяется через <html data-theme="dark">.
+   Переопределяет ТОЛЬКО семантические роли (слой 2) и цвета canvas.
+   Палитру (слой 1) и геометрию (слой 3) НЕ трогает.
+   ========================================================================== */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* ── Фоны ── */
+  --color-bg-canvas:     var(--palette-slate-950);
+  --color-bg-surface:    var(--palette-slate-900);
+  --color-bg-elevated:   var(--palette-slate-850);
+
+  /* ── Границы ── */
+  --color-border-subtle: var(--palette-slate-800);
+  --color-border-strong: var(--palette-slate-700);
+
+  /* ── Текст ── */
+  --color-text-primary:   var(--palette-slate-50);
+  --color-text-secondary: var(--palette-slate-400);
+  --color-text-muted:     var(--palette-slate-500);
+
+  /* ── Акценты ── */
+  --color-accent-primary: var(--palette-cyan-400);
+  --color-accent-danger:  var(--palette-rose-500);
+
+  /* ── Статусы ── */
+  --color-status-ok:    var(--palette-emerald-400);
+  --color-status-alarm: var(--palette-rose-400);
+  --color-status-warn:  var(--palette-amber-400);
+  --color-status-calib: var(--palette-violet-400);
+
+  /* ── Canvas / chart.js ── */
+  --chart-grid:            rgba(148, 163, 184, 0.12);
+  --chart-threshold:       var(--palette-rose-500);
+  --chart-hysteresis:      rgba(251, 191, 36, 0.45);
+  --chart-line-main:       var(--palette-cyan-400);
+  --chart-line-main-alarm: var(--palette-rose-400);
+  --chart-fill-main:       rgba(34, 211, 238, 0.25);
+  --chart-fill-alarm:      rgba(244, 63, 94, 0.28);
+  --chart-crosshair:       rgba(226, 232, 240, 0.35);
+  --chart-tooltip-bg:      rgba(15, 23, 42, 0.92);
+  --chart-tooltip-border:  rgba(56, 189, 248, 0.5);
+  --chart-axis-label:      var(--palette-slate-500);
+}

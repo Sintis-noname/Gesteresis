@@ -1,0 +1,54 @@
+/* ==========================================================================
+   GESTERESIS — Theme: Light (css/themes/light.css)
+   --------------------------------------------------------------------------
+   Применяется через <html data-theme="light">.
+   Переопределяет ТОЛЬКО семантические роли (слой 2) и цвета canvas.
+   ========================================================================== */
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* ── Фоны ──
+     canvas — светло-серый, surface — чистый белый, чтобы карточки
+     визуально "выступали" над фоном. */
+  --color-bg-canvas:     var(--palette-slate-50);
+  --color-bg-surface:    #ffffff;
+  --color-bg-elevated:   var(--palette-slate-100);
+
+  /* ── Границы ──
+     Контраст выше, чем в dark, иначе на белом границы не читаются. */
+  --color-border-subtle: var(--palette-slate-200);
+  --color-border-strong: var(--palette-slate-300);
+
+  /* ── Текст ── */
+  --color-text-primary:   var(--palette-slate-900);
+  --color-text-secondary: var(--palette-slate-600);
+  --color-text-muted:     var(--palette-slate-500);
+
+  /* ── Акценты ──
+     cyan-600 вместо cyan-400: cyan-400 на белом не проходит WCAG AA. */
+  --color-accent-primary: var(--palette-cyan-600);
+  --color-accent-danger:  var(--palette-rose-600);
+
+  /* ── Статусы ──
+     500-й уровень вместо 400-го — по той же причине контраста. */
+  --color-status-ok:    var(--palette-emerald-500);
+  --color-status-alarm: var(--palette-rose-500);
+  --color-status-warn:  var(--palette-amber-500);
+  --color-status-calib: var(--palette-violet-500);
+
+  /* ── Canvas / chart.js ──
+     Сетка темнее, заливки прозрачнее (не "грязнят" белый),
+     тултип — светлый с тёмным текстом. */
+  --chart-grid:            rgba(100, 116, 139, 0.18);
+  --chart-threshold:       var(--palette-rose-600);
+  --chart-hysteresis:      rgba(245, 158, 11, 0.55);
+  --chart-line-main:       var(--palette-cyan-600);
+  --chart-line-main-alarm: var(--palette-rose-500);
+  --chart-fill-main:       rgba(8, 145, 178, 0.15);
+  --chart-fill-alarm:      rgba(244, 63, 94, 0.15);
+  --chart-crosshair:       rgba(71, 85, 105, 0.45);
+  --chart-tooltip-bg:      rgba(255, 255, 255, 0.96);
+  --chart-tooltip-border:  rgba(8, 145, 178, 0.6);
+  --chart-axis-label:      var(--palette-slate-600);
+}
