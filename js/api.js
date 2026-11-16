@@ -187,20 +187,29 @@ class ApiService {
         throw new Error(`Устройство с ID "${id}" уже зарегистрировано`);
       }
       const nowSec = Math.floor(Date.now() / 1000);
+      const M = APP_CONFIG.MOCK;
       const dev = {
         id,
         name,
         threshold: Number(threshold) || APP_CONFIG.DEFAULT_THRESHOLD,
         nominal_rpm: Number(nominal_rpm) || 0,
         model_source: 'MCU',
-        cond_number: 520.0,
+        cond_number: M.NEW_DEVICE_COND_NUMBER,
         telemetry: {
           id, ts: nowSec,
-          d_m: 1.45, d_m_filtered: 1.42,
-          status: 'OK', rms: 0.035,
-          fault_code: 0x0000, fw: '0.3.1',
+          d_m: M.NEW_DEVICE_DM,
+          d_m_filtered: M.NEW_DEVICE_DM_FILTERED,
+          status: 'OK',
+          rms: M.NEW_DEVICE_RMS,
+          fault_code: 0x0000,
+          fw: '0.3.1',
         },
-        history: this._seedHistory(nowSec, 1.45, Number(threshold) || APP_CONFIG.DEFAULT_THRESHOLD, 'OK'),
+        history: this._seedHistory(
+          nowSec,
+          M.NEW_DEVICE_DM,
+          Number(threshold) || APP_CONFIG.DEFAULT_THRESHOLD,
+          'OK'
+        ),
       };
       this.mockDevices.push(dev);
       this._saveMockStorage();
@@ -245,16 +254,17 @@ class ApiService {
           if (dev.telemetry.status === 'CALIBRATING') {
             return { cmd, result: 'BUSY', source: 'MCU', ts, detail: 'Калибровка уже выполняется' };
           }
+          const M = APP_CONFIG.MOCK;
           dev.telemetry.status = 'CALIBRATING';
           setTimeout(() => {
             dev.telemetry.status = 'OK';
-            dev.telemetry.d_m = 1.15;
-            dev.telemetry.d_m_filtered = 1.12;
+            dev.telemetry.d_m = M.CALIBRATION_RESULT_DM;
+            dev.telemetry.d_m_filtered = M.CALIBRATION_RESULT_DM_FILTERED;
             dev.telemetry.fault_code &= ~0x0080;
             dev.model_source = 'MCU';
-          }, 4000);
-          return { cmd, result: 'OK', source: 'MCU', ts, detail: `Сбор окон (${params.duration_s || 30}с)` };
+          }, M.CALIBRATION_DURATION_MS);
         }
+
         case 'SET_THRESHOLD': {
           const val = Number(params.threshold);
           if (isNaN(val) || val <= 0) throw new Error('Некорректный порог');
@@ -265,6 +275,7 @@ class ApiService {
           this._saveMockStorage();
           return { cmd, result: 'OK', source: 'MCU', ts, detail: `threshold = ${val} записан в NVS` };
         }
+
         case 'SET_RPM': {
           const rpm = Number(params.nominal_rpm);
           if (isNaN(rpm) || rpm < 0) throw new Error('Некорректный RPM');
@@ -272,6 +283,7 @@ class ApiService {
           this._saveMockStorage();
           return { cmd, result: 'OK', source: 'MCU', ts, detail: `nominal_rpm = ${rpm}` };
         }
+
         case 'CLEAR_FAULT': {
           dev.telemetry.fault_code = 0x0000;
           if (dev.telemetry.status === 'SENSOR_FAULT') {
@@ -280,13 +292,16 @@ class ApiService {
           this._saveMockStorage();
           return { cmd, result: 'OK', source: 'MCU', ts, detail: 'Latch ошибок сброшен' };
         }
+
         case 'RESET': {
+          const M = APP_CONFIG.MOCK;
           dev.telemetry.status = 'OK';
-          dev.telemetry.d_m = 1.2;
-          dev.telemetry.d_m_filtered = 1.2;
+          dev.telemetry.d_m = M.RESET_RESULT_DM;
+          dev.telemetry.d_m_filtered = M.RESET_RESULT_DM;
           this._saveMockStorage();
           return { cmd, result: 'OK', source: 'MCU', ts, detail: 'ESP32-S3 перезагружен' };
         }
+        
         default:
           throw new Error(`Неизвестная команда: ${cmd}`);
       }
@@ -381,11 +396,21 @@ class ApiService {
     const points = [];
     let filtered = baseDm;
     const N = APP_CONFIG.MAX_HISTORY_POINTS;
+    const M = APP_CONFIG.MOCK;
+
     for (let i = N - 1; i >= 0; i--) {
       const ts = nowSec - i * 5;
-      const trend = status === 'ALARM' ? (N - i) * 0.035 : 0;
-      const raw = Math.max(0.2, +(baseDm - 0.6 + trend + (Math.random() - 0.48) * 0.5).toFixed(3));
-      filtered = +(filtered + 0.32 * (raw - filtered)).toFixed(3);
+      const trend = status === 'ALARM' ? (N - i) * M.SEED_TREND_PER_POINT : 0;
+      const raw = Math.max(
+        0.2,
+        +(
+          baseDm
+          - M.SEED_DM_OFFSET
+          + trend
+          + (Math.random() - M.SEED_NOISE_BIAS) * M.SEED_NOISE_AMPLITUDE
+        ).toFixed(3)
+      );
+      filtered = +(filtered + M.KALMAN_ALPHA * (raw - filtered)).toFixed(3);
       points.push({ ts, d_m: raw, d_m_filtered: filtered });
     }
     return points;
@@ -397,24 +422,55 @@ class ApiService {
 
   _tickMockTelemetry() {
     const nowSec = Math.floor(Date.now() / 1000);
+    const M = APP_CONFIG.MOCK;
+
     this.mockDevices.forEach((dev) => {
       if (dev.telemetry.status === 'CALIBRATING') {
         // имитация прогрева — статус меняется в CALIBRATE
       } else {
         const prev = dev.telemetry;
         let rawDm;
+
         if (prev.status === 'ALARM') {
-          rawDm = +(dev.threshold + 0.35 + (Math.random() - 0.35) * 0.9).toFixed(2);
+          // В тревоге сигнал «висит» над порогом с джиттером
+          rawDm = +(
+            dev.threshold
+            + M.ALARM_OFFSET
+            + (Math.random() - M.ALARM_OFFSET) * M.ALARM_JITTER
+          ).toFixed(2);
         } else {
-          const spike = Math.random() > 0.88 ? 0.65 : 0;
-          rawDm = +(Math.max(0.4, dev.threshold * 0.5 + (Math.random() - 0.5) * 0.55 + spike)).toFixed(2);
+          // В норме — базовый шум + редкие спайки
+          const spike = Math.random() < M.SPIKE_PROBABILITY ? M.SPIKE_MAGNITUDE : 0;
+          rawDm = +(
+            Math.max(
+              M.MIN_RAW,
+              dev.threshold * M.BASE_MULTIPLIER
+              + (Math.random() - 0.5) * M.NOISE_AMPLITUDE
+              + spike
+            )
+          ).toFixed(2);
         }
-        const filtered = +(prev.d_m_filtered + 0.35 * (rawDm - prev.d_m_filtered)).toFixed(2);
-        const rms = +(0.03 + filtered * 0.025 + (Math.random() - 0.5) * 0.008).toFixed(3);
+
+        const filtered = +(
+          prev.d_m_filtered
+          + M.KALMAN_ALPHA * (rawDm - prev.d_m_filtered)
+        ).toFixed(2);
+
+        const rms = +(
+          M.RMS_BASE
+          + filtered * M.RMS_DM_FACTOR
+          + (Math.random() - 0.5) * M.RMS_NOISE
+        ).toFixed(3);
 
         let nextStatus = prev.status;
-        if (prev.status === 'OK' && filtered > dev.threshold) nextStatus = 'ALARM';
-        else if (prev.status === 'ALARM' && filtered < dev.threshold * APP_CONFIG.HYSTERESIS_EXIT_RATIO) nextStatus = 'OK';
+        if (prev.status === 'OK' && filtered > dev.threshold) {
+          nextStatus = 'ALARM';
+        } else if (
+          prev.status === 'ALARM'
+          && filtered < dev.threshold * APP_CONFIG.HYSTERESIS_EXIT_RATIO
+        ) {
+          nextStatus = 'OK';
+        }
 
         dev.telemetry = { ...prev, ts: nowSec, d_m: rawDm, d_m_filtered: filtered, status: nextStatus, rms };
         dev.history.push({ ts: nowSec, d_m: rawDm, d_m_filtered: filtered });
