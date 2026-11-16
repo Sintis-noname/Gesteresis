@@ -456,16 +456,16 @@ class GesteresisApp {
 
   // -------------------- СТРАНИЦА ДЕТАЛЬНОЙ ИНФОРМАЦИИ (ЗАГЛУШКА) --------------------
 
-  _renderDeviceDetailPage(deviceId) {
+    _renderDeviceDetailPage(deviceId) {
     const container = document.getElementById('view-device-detail');
     if (!container) return;
     const dev = this.state.devices.find(d => d.id === deviceId);
 
     if (!dev) {
       container.innerHTML = `
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-4">
-          <h2 class="text-lg font-bold text-rose-400">Устройство "${this._escapeHtml(deviceId)}" не найдено</h2>
-          <a href="#/" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm text-white">
+        <div class="bg-bg-surface border border-border-subtle rounded-card p-8 text-center space-y-4">
+          <h2 class="text-lg font-bold text-status-alarm">Устройство "${this._escapeHtml(deviceId)}" не найдено</h2>
+          <a href="#/" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-bg-elevated hover:bg-bg-surface text-sm text-text-primary border border-border-subtle transition">
             ← Назад к дашборду
           </a>
         </div>
@@ -477,35 +477,35 @@ class GesteresisApp {
 
     container.innerHTML = `
       <!-- Навигация назад и заголовок узла -->
-      <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-5">
+      <div class="flex flex-wrap items-center justify-between gap-4 bg-bg-surface border border-border-subtle rounded-card p-5">
         <div class="flex items-center gap-4">
-          <a href="#/" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+          <a href="#/" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-bg-elevated hover:bg-bg-surface text-text-primary border border-border-subtle transition">
             ← Назад к дашборду
           </a>
           <div>
             <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 font-mono text-xs font-bold text-cyan-400">${this._escapeHtml(dev.id)}</span>
-              <span class="text-xs font-mono text-slate-400">Прошивка: v${this._escapeHtml(t.fw)}</span>
+              <span class="px-2 py-0.5 rounded bg-accent/15 border border-accent/30 font-mono text-xs font-bold text-accent">${this._escapeHtml(dev.id)}</span>
+              <span class="text-xs font-mono text-text-secondary">Прошивка: v${this._escapeHtml(t.fw)}</span>
             </div>
-            <h1 class="text-lg sm:text-xl font-bold text-white mt-0.5">${this._escapeHtml(dev.name)}</h1>
+            <h1 class="text-lg sm:text-xl font-bold text-text-primary mt-0.5">${this._escapeHtml(dev.name)}</h1>
           </div>
         </div>
 
         <div class="flex items-center gap-3">
           ${this._getStatusBadgeHtml(t.status)}
-          <button id="detail-open-settings" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition cursor-pointer">
+          <button id="detail-open-settings" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-bg-elevated hover:bg-bg-surface text-text-primary border border-border-subtle transition cursor-pointer">
             Настройки чипа
           </button>
         </div>
       </div>
 
       <!-- Баннер-заглушка для подключения детального API -->
-      <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div class="bg-status-warn/10 border border-status-warn/30 rounded-card p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div class="flex items-start gap-3">
-          <span class="px-2 py-1 rounded bg-amber-500/20 text-amber-300 font-mono text-xs font-bold">API STUB</span>
-          <div class="text-xs sm:text-sm text-amber-100/90">
+          <span class="px-2 py-1 rounded bg-status-warn/20 text-status-warn font-mono text-xs font-bold">API STUB</span>
+          <div class="text-xs sm:text-sm text-text-primary/90">
             <strong>Страница детальной диагностики чипа (заглушка).</strong> Архитектура готова к подключению топиков
-            <code class="font-mono text-amber-300">p11/gesteresis/${this._escapeHtml(dev.id)}/raw</code> (режим аудита C) и эндпоинта <code class="font-mono text-amber-300">GET /api/v1/devices/${this._escapeHtml(dev.id)}/model</code>.
+            <code class="font-mono text-status-warn">p11/gesteresis/${this._escapeHtml(dev.id)}/raw</code> (режим аудита C) и эндпоинта <code class="font-mono text-status-warn">GET /api/v1/devices/${this._escapeHtml(dev.id)}/model</code>.
           </div>
         </div>
       </div>
@@ -514,33 +514,33 @@ class GesteresisApp {
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         <!-- Блок 1: 12-мерный вектор признаков x[12] (interfaces.md §1) -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden">
-          <div class="px-5 py-4 border-b border-slate-800 bg-slate-950/50 flex items-center justify-between">
+        <div class="bg-bg-surface border border-border-subtle rounded-card overflow-hidden">
+          <div class="px-5 py-4 border-b border-border-subtle bg-bg-canvas/50 flex items-center justify-between">
             <div>
-              <h2 class="text-sm font-bold text-white">Вектор признаков x[12] (float32)</h2>
-              <p class="text-xs text-slate-400">Контракт порядка признаков (interfaces.md §1)</p>
+              <h2 class="text-sm font-bold text-text-primary">Вектор признаков x[12] (float32)</h2>
+              <p class="text-xs text-text-secondary">Контракт порядка признаков (interfaces.md §1)</p>
             </div>
-            <span class="font-mono text-xs text-cyan-400">DIM = 12</span>
+            <span class="font-mono text-xs text-accent">DIM = 12</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="border-b border-slate-800 text-[11px] font-mono text-slate-400 bg-slate-950/30">
+                <tr class="border-b border-border-subtle text-[11px] font-mono text-text-secondary bg-bg-canvas/30">
                   <th class="py-2.5 px-4">#</th>
                   <th class="py-2.5 px-3">Ключ</th>
                   <th class="py-2.5 px-3">Описание</th>
                   <th class="py-2.5 px-4 text-right">Значение (Stub)</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-800/60 text-xs font-mono">
+              <tbody class="divide-y divide-border-subtle text-xs font-mono">
                 ${FEATURE_SCHEMA_X12.map(f => {
                   const mockVal = f.key === 'rms_x' ? t.rms.toFixed(4) : '— (ожидание /raw)';
                   return `
-                    <tr class="hover:bg-slate-800/30">
-                      <td class="py-2 px-4 text-slate-500">${f.idx}</td>
-                      <td class="py-2 px-3 text-cyan-300 font-semibold">${f.key}</td>
-                      <td class="py-2 px-3 font-sans text-slate-300">${f.desc}</td>
-                      <td class="py-2 px-4 text-right text-slate-400">${mockVal} <span class="text-slate-600">${f.unit}</span></td>
+                    <tr class="hover:bg-bg-elevated/50">
+                      <td class="py-2 px-4 text-text-muted">${f.idx}</td>
+                      <td class="py-2 px-3 text-accent font-semibold">${f.key}</td>
+                      <td class="py-2 px-3 font-sans text-text-primary">${f.desc}</td>
+                      <td class="py-2 px-4 text-right text-text-secondary">${mockVal} <span class="text-text-muted">${f.unit}</span></td>
                     </tr>
                   `;
                 }).join('')}
@@ -551,52 +551,52 @@ class GesteresisApp {
 
         <!-- Блок 2: CalibrationBlob (644 байта) и матрица S⁻¹ -->
         <div class="space-y-6">
-          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="bg-bg-surface border border-border-subtle rounded-card p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-border-subtle pb-3">
               <div>
-                <h2 class="text-sm font-bold text-white">Состояние модели NVS (CalibrationBlob)</h2>
-                <p class="text-xs text-slate-400">Namespace: <code class="font-mono text-slate-300">gesteresis</code> • Размер: 644 байта</p>
+                <h2 class="text-sm font-bold text-text-primary">Состояние модели NVS (CalibrationBlob)</h2>
+                <p class="text-xs text-text-secondary">Namespace: <code class="font-mono text-text-primary">gesteresis</code> • Размер: 644 байта</p>
               </div>
-              <span class="px-2 py-0.5 rounded font-mono text-xs bg-slate-800 text-cyan-400 border border-slate-700">
+              <span class="px-2 py-0.5 rounded font-mono text-xs bg-bg-elevated text-accent border border-border-subtle">
                 Source: ${this._escapeHtml(dev.model_source)}
               </span>
             </div>
 
             <div class="grid grid-cols-2 gap-3 font-mono text-xs">
-              <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span class="text-slate-500 block text-[10px]">D_m (Kalman / Raw)</span>
-                <span class="text-sm font-bold text-white mt-0.5 block">${t.d_m_filtered.toFixed(3)} / ${t.d_m.toFixed(3)}</span>
+              <div class="p-3 rounded-xl bg-bg-canvas border border-border-subtle">
+                <span class="text-text-muted block text-[10px]">D_m (Kalman / Raw)</span>
+                <span class="text-sm font-bold text-text-primary mt-0.5 block">${t.d_m_filtered.toFixed(3)} / ${t.d_m.toFixed(3)}</span>
               </div>
-              <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span class="text-slate-500 block text-[10px]">Порог тревоги (threshold)</span>
-                <span class="text-sm font-bold text-rose-400 mt-0.5 block">${dev.threshold.toFixed(2)}</span>
+              <div class="p-3 rounded-xl bg-bg-canvas border border-border-subtle">
+                <span class="text-text-muted block text-[10px]">Порог тревоги (threshold)</span>
+                <span class="text-sm font-bold text-status-alarm mt-0.5 block">${dev.threshold.toFixed(2)}</span>
               </div>
-              <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span class="text-slate-500 block text-[10px]">Число обусловленности cond(S)</span>
-                <span class="text-sm font-bold text-amber-300 mt-0.5 block">${dev.cond_number ? dev.cond_number.toExponential(2) : '—'}</span>
+              <div class="p-3 rounded-xl bg-bg-canvas border border-border-subtle">
+                <span class="text-text-muted block text-[10px]">Число обусловленности cond(S)</span>
+                <span class="text-sm font-bold text-status-warn mt-0.5 block">${dev.cond_number ? dev.cond_number.toExponential(2) : '—'}</span>
               </div>
-              <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span class="text-slate-500 block text-[10px]">Номинал RPM / Magic</span>
-                <span class="text-sm font-bold text-slate-200 mt-0.5 block">${dev.nominal_rpm} / 0x47455354</span>
+              <div class="p-3 rounded-xl bg-bg-canvas border border-border-subtle">
+                <span class="text-text-muted block text-[10px]">Номинал RPM / Magic</span>
+                <span class="text-sm font-bold text-text-primary mt-0.5 block">${dev.nominal_rpm} / 0x47455354</span>
               </div>
             </div>
           </div>
 
           <!-- Заглушка под матрицу S⁻¹ 12x12 -->
-          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div class="bg-bg-surface border border-border-subtle rounded-card p-5 space-y-3">
             <div class="flex items-center justify-between">
-              <h2 class="text-sm font-bold text-white">Обратная ковариационная матрица S⁻¹ (12×12)</h2>
-              <span class="text-xs font-mono text-slate-400">144 float32</span>
+              <h2 class="text-sm font-bold text-text-primary">Обратная ковариационная матрица S⁻¹ (12×12)</h2>
+              <span class="text-xs font-mono text-text-secondary">144 float32</span>
             </div>
-            <p class="text-xs text-slate-400">
-              Регуляризованная матрица <code class="font-mono text-slate-300">inv(S + λ·I)</code>, загруженная в память ESP32-S3. После подключения бэкенда здесь будет отображаться тепловая карта корреляций.
+            <p class="text-xs text-text-secondary">
+              Регуляризованная матрица <code class="font-mono text-text-primary">inv(S + λ·I)</code>, загруженная в память ESP32-S3. После подключения бэкенда здесь будет отображаться тепловая карта корреляций.
             </p>
-            <div class="grid grid-cols-12 gap-1 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[9px] text-center select-none">
+            <div class="grid grid-cols-12 gap-1 p-3 rounded-xl bg-bg-canvas border border-border-subtle font-mono text-[9px] text-center select-none">
               ${Array.from({ length: 144 }, (_, idx) => {
                 const row = Math.floor(idx / 12);
                 const col = idx % 12;
                 const isDiag = row === col;
-                return `<div class="py-1 rounded ${isDiag ? 'bg-cyan-500/25 text-cyan-300 font-bold' : 'bg-slate-900 text-slate-600'}">${isDiag ? '1.0' : '0.0'}</div>`;
+                return `<div class="py-1 rounded ${isDiag ? 'bg-accent/25 text-accent font-bold' : 'bg-bg-elevated text-text-muted'}">${isDiag ? '1.0' : '0.0'}</div>`;
               }).join('')}
             </div>
           </div>
