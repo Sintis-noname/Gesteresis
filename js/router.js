@@ -57,6 +57,11 @@ const Router = {
         render: (app, pageKey) => this._renderLegal(app, pageKey),
       },
       {
+        pattern: /^#\/profile$/,
+        view: 'profile',
+        render: (app) => this._renderProfile(app),
+      },
+      {
         pattern: /^#\/?$/,
         view: 'dashboard',
         render: (app) => this._renderDashboard(app),
@@ -212,6 +217,14 @@ const Router = {
   _renderLegal(app, pageKey) {
     if (window.Legal) {
       window.Legal.render(pageKey);
+    }
+  },
+  /**
+   * @private
+   */
+  _renderProfile(app) {
+    if (window.Profile) {
+      window.Profile.render(app);
     }
   },
 };
