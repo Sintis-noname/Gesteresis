@@ -102,10 +102,10 @@ class GesteresisApp {
 
     if (this.state.user) {
       container.innerHTML = `
-        <div class="hidden md:flex flex-col items-end mr-1">
+        <a href="#/profile" class="hidden md:flex flex-col items-end mr-1 hover:opacity-80 transition">
           <span class="text-xs font-mono font-semibold text-text-primary">${Html.escape(this.state.user.email)}</span>
           <span class="text-[10px] text-text-secondary">${Html.escape(this.state.user.company || 'Инженер')}</span>
-        </div>
+        </a>
         <button id="btn-logout" type="button"
           class="px-3.5 py-2 rounded-xl text-xs font-medium bg-bg-surface hover:bg-status-alarm/20 hover:text-status-alarm text-text-secondary border border-border-subtle hover:border-status-alarm/40 transition cursor-pointer">
           Выйти
