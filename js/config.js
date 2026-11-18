@@ -9,12 +9,67 @@ window.APP_CONFIG = Object.freeze({
   API_BASE_URL: 'http://localhost:8000/api/v1',
   WS_URL: 'ws://localhost:8000/ws/telemetry',
   TELEMETRY_INTERVAL_MS: 5000,
-  MAX_HISTORY_POINTS: 36,          // ← добавлено: буфер истории для графика
+  MAX_HISTORY_POINTS: 36,
   DEFAULT_THRESHOLD: 3.5,
   HYSTERESIS_EXIT_RATIO: 0.8,
   FEATURE_DIM: 12,
   MODEL_VERSION: 1,
   CALIBRATION_BLOB_SIZE: 644,
+
+  /**
+   * Параметры мок-генератора телеметрии.
+   * В реальном бэкенде эти числа придут из API — здесь они только для того,
+   * чтобы демо-режим (USE_MOCK_DATA: true) выдавал правдоподобные данные.
+   *
+   * Раньше были разбросаны по api.js в виде "0.35", "0.88", "0.03" и т.д.
+   * Теперь — один источник правды.
+   */
+  MOCK: Object.freeze({
+    // Фильтр Калмана: alpha ∈ (0, 1]. Чем меньше — тем сильнее сглаживание.
+    // В _seedHistory и _tickMockTelemetry раньше было 0.32 и 0.35 — унифицируем.
+    KALMAN_ALPHA: 0.35,
+
+    // Генератор сырого d_m в штатном режиме (статус OK):
+    //   raw = max(MIN_RAW, base + noise + spike)
+    BASE_MULTIPLIER: 0.5,        // base = threshold * BASE_MULTIPLIER
+    NOISE_AMPLITUDE: 0.55,       // размах шума вокруг base
+    MIN_RAW: 0.4,                // нижняя граница сырого сигнала
+
+    // Спайки (короткие выбросы, чтобы график «дышал»):
+    SPIKE_PROBABILITY: 0.12,     // вероятность спайка на тик (было: Math.random() > 0.88)
+    SPIKE_MAGNITUDE: 0.65,       // добавка к raw при спайке
+
+    // Генератор при статусе ALARM:
+    //   raw = threshold + ALARM_OFFSET + (random - 0.35) * ALARM_JITTER
+    ALARM_OFFSET: 0.35,
+    ALARM_JITTER: 0.9,
+
+    // RMS-эвристика (для красивого отображения):
+    //   rms = RMS_BASE + d_m_filtered * RMS_DM_FACTOR + шум
+    RMS_BASE: 0.03,
+    RMS_DM_FACTOR: 0.025,
+    RMS_NOISE: 0.008,
+
+    // _seedHistory (первичное заполнение буфера при старте):
+    SEED_DM_OFFSET: 0.6,         // baseDm - SEED_DM_OFFSET — стартовое значение
+    SEED_NOISE_AMPLITUDE: 0.5,   // шум стартовой серии
+    SEED_NOISE_BIAS: 0.48,       // смещение шума (было Math.random() - 0.48)
+    SEED_TREND_PER_POINT: 0.035, // прирост d_m за точку в режиме ALARM
+
+    // Калибровка (имитация завершения через N мс):
+    CALIBRATION_DURATION_MS: 4000,
+    CALIBRATION_RESULT_DM: 1.15,
+    CALIBRATION_RESULT_DM_FILTERED: 1.12,
+
+    // RESET (имитация перезагрузки):
+    RESET_RESULT_DM: 1.2,
+
+    // Параметры нового устройства при addDevice:
+    NEW_DEVICE_DM: 1.45,
+    NEW_DEVICE_DM_FILTERED: 1.42,
+    NEW_DEVICE_RMS: 0.035,
+    NEW_DEVICE_COND_NUMBER: 520.0,
+  }),
 
   ENDPOINTS: Object.freeze({
     AUTH_LOGIN: '/auth/login',
