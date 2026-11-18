@@ -52,6 +52,11 @@ const Router = {
         render: (app, deviceId) => this._renderDeviceDetail(app, deviceId),
       },
       {
+        pattern: /^#\/legal\/([^/]+)$/,
+        view: 'legal',
+        render: (app, pageKey) => this._renderLegal(app, pageKey),
+      },
+      {
         pattern: /^#\/?$/,
         view: 'dashboard',
         render: (app) => this._renderDashboard(app),
@@ -201,6 +206,15 @@ const Router = {
       });
     }
   },
+  /**
+  * @private
+  */
+  _renderLegal(app, pageKey) {
+    if (window.Legal) {
+      window.Legal.render(pageKey);
+    }
+  },
 };
+
 
 window.Router = Router;
