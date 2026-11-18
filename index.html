@@ -89,7 +89,7 @@
           <div>
             <div class="flex items-center gap-2">
               <span class="font-mono font-bold text-lg tracking-wider text-text-primary">GESTERESIS</span>
-              <span class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-accent/10 text-accent border border-accent/30">v0.6.3ащ Edge AI</span>
+              <span class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-accent/10 text-accent border border-accent/30">v0.6.4 Edge AI</span>
             </div>
             <p class="text-xs text-text-secondary">Edge AI Predictive Diagnostics</p>
           </div>
@@ -232,6 +232,11 @@
     <!-- VIEW 2: СТРАНИЦА ДЕТАЛЬНОЙ ИНФОРМАЦИИ О ЧИПЕ -->
     <section id="view-device-detail" data-view="device-detail" class="hidden space-y-6">
       <!-- Рендерится динамически при переходе на #/device/{id} -->
+    </section>
+
+    <!-- VIEW 3: ЮРИДИЧЕСКИЕ СТРАНИЦЫ (privacy, terms, pd, cookies, security, contacts) -->
+    <section id="view-legal" data-view="legal" class="hidden space-y-6">
+      <!-- Рендерится через Legal.render(pageKey) -->
     </section>
 
   </main>
@@ -536,6 +541,7 @@
   <script src="js/chart.js"></script>
   <script src="js/components/device-card.js"></script>
   <script src="js/components/device-detail.js"></script>
+  <script src="js/components/legal.js"></script>
   <script src="js/forms.js"></script>
   <script src="js/router.js"></script>
   <script src="js/app.js"></script>
