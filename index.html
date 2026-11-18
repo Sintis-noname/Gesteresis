@@ -89,7 +89,7 @@
           <div>
             <div class="flex items-center gap-2">
               <span class="font-mono font-bold text-lg tracking-wider text-text-primary">GESTERESIS</span>
-              <span class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-accent/10 text-accent border border-accent/30">v0.6.2 Edge AI</span>
+              <span class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-accent/10 text-accent border border-accent/30">v0.6.3ащ Edge AI</span>
             </div>
             <p class="text-xs text-text-secondary">Edge AI Predictive Diagnostics</p>
           </div>
@@ -237,12 +237,39 @@
   </main>
 
   <!-- ==================== FOOTER ==================== -->
-  <footer class="border-t border-border-subtle bg-bg-canvas/70 py-4 mt-10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-text-muted font-mono">
+<footer class="border-t border-border-subtle bg-bg-canvas/70 py-6 mt-10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+
+    <!-- Юридические ссылки -->
+    <nav class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-text-secondary" aria-label="Юридическая информация">
+      <a href="#/legal/privacy" class="hover:text-accent transition">Политика конфиденциальности</a>
+      <span class="text-border-strong hidden sm:inline">•</span>
+      <a href="#/legal/terms" class="hover:text-accent transition">Пользовательское соглашение</a>
+      <span class="text-border-strong hidden sm:inline">•</span>
+      <a href="#/legal/pd" class="hover:text-accent transition">Обработка персональных данных</a>
+      <span class="text-border-strong hidden sm:inline">•</span>
+      <a href="#/legal/cookies" class="hover:text-accent transition">Файлы cookie</a>
+      <span class="text-border-strong hidden sm:inline">•</span>
+      <a href="#/legal/security" class="hover:text-accent transition">Безопасность и SLA</a>
+      <span class="text-border-strong hidden sm:inline">•</span>
+      <a href="#/legal/contacts" class="hover:text-accent transition">Контакты</a>
+    </nav>
+
+    <!-- Техническая строка -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-text-muted font-mono">
       <div>GESTERESIS EDGE AI SYSTEM • PROTOCOL v0.3 (ADR-0003 / ADR-0004)</div>
       <div>CALIBRATION BLOB: 644 BYTES (NVS) • DIM: 12 FEATURES</div>
     </div>
-  </footer>
+
+    <!-- Копирайт -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-text-muted">
+      <div>© <span id="footer-year">2025</span> Gesteresis. Все права защищены.</div>
+      <div class="text-center sm:text-right">
+        ООО «ПРОЕКТ 11» • ИНН 0272938548 • 123456, г. Белебей, ул. Лесная, д. 12
+      </div>
+    </div>
+  </div>
+</footer>
 
   <!-- ==================== MODAL: НАСТРОЙКИ ЧИПА ==================== -->
   <div id="modal-settings" class="fixed inset-0 z-50 hidden items-center justify-center bg-bg-canvas/80 backdrop-blur-sm p-4">
@@ -501,9 +528,16 @@
 
   <!-- ==================== APPLICATION SCRIPTS ==================== -->
   <script src="js/config.js"></script>
+  <script src="js/utils/html.js"></script>
   <script src="js/theme.js"></script>
+  <script src="js/components/toast.js"></script>
+  <script src="js/components/kpi-bar.js"></script>
   <script src="js/api.js"></script>
   <script src="js/chart.js"></script>
+  <script src="js/components/device-card.js"></script>
+  <script src="js/components/device-detail.js"></script>
+  <script src="js/forms.js"></script>
+  <script src="js/router.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
