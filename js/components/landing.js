@@ -365,24 +365,39 @@ const Landing = {
   // ПРИВЯЗКА И ИКОНКИ
   // ==========================================================================
 
-  _bind(container) {
-    // Кнопки, открывающие модалки (например, «Оформить подписку»)
-    container.querySelectorAll('[data-modal-trigger]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-modal-trigger');
-        // Заполнить дату окончания подписки, если это модалка подписки
-        if (id === 'modal-subscription') {
-          const app = window.gesteresisApp;
-          const dt = app?.state?.subscription
-            ? Html.formatDate(app.state.subscription.expiresAt)
-            : '—';
-          const el = document.getElementById('modal-sub-current-date');
-          if (el) el.textContent = dt;
-        }
-        window.modalManager?.open(id);
-      });
+_bind(container) {
+  // Кнопки, открывающие модалки (например, «Оформить подписку»)
+  container.querySelectorAll('[data-modal-trigger]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-modal-trigger');
+      if (id === 'modal-subscription') {
+        const app = window.gesteresisApp;
+        const dt = app?.state?.subscription
+          ? Html.formatDate(app.state.subscription.expiresAt)
+          : '—';
+        const el = document.getElementById('modal-sub-current-date');
+        if (el) el.textContent = dt;
+      }
+      window.modalManager?.open(id);
     });
-  },
+  });
+
+  // Скролл-кнопки — ищем по всему документу, т.к. они могут быть в шапке
+  document.querySelectorAll('[data-scroll-to]').forEach((btn) => {
+    // Защита от двойной привязки: если уже привязано — пропускаем
+    if (btn.dataset.scrollBound === '1') return;
+    btn.dataset.scrollBound = '1';
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const id = btn.getAttribute('data-scroll-to');
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+},
 
   /**
    * SVG-иконки по ключу (без внешних библиотек).
