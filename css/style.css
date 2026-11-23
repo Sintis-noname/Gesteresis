@@ -136,3 +136,170 @@ input[type="number"] {
 #toast-container > * {
   animation: toast-in var(--anim-fade-duration) ease-out;
 }
+
+/* ==========================================================================
+   8. Переходы между страницами (SPA transitions)
+   --------------------------------------------------------------------------
+   Router._showView управляет этими классами:
+   - .view-enter       — новая view появляется (fade-in + slide-up)
+   - .view-leave       — старая view исчезает (fade-out + slide-down)
+
+   Длительность должна совпадать с VIEW_TRANSITION_MS в router.js.
+   ========================================================================== */
+
+@keyframes view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes view-leave {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+[data-view].view-enter {
+  animation: view-enter var(--anim-view-ms, 220ms) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+[data-view].view-leave {
+  animation: view-leave var(--anim-view-ms, 220ms) cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   9. Экран загрузки (глобальный overlay)
+   --------------------------------------------------------------------------
+   Показывается:
+   - при первом init приложения (пока данные грузятся);
+   - при переходах, если рендер > TRANSITION_LOADER_DELAY_MS.
+   ========================================================================== */
+
+#app-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: var(--color-bg-canvas);
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 200ms ease, visibility 200ms ease;
+}
+
+#app-preloader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#app-preloader .preloader-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-danger));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 40px -10px var(--color-accent-primary);
+  animation: preloader-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes preloader-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 40px -10px var(--color-accent-primary); }
+  50%      { transform: scale(1.06); box-shadow: 0 0 60px -5px var(--color-accent-primary); }
+}
+
+#app-preloader .preloader-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid var(--color-border-subtle);
+  border-top-color: var(--color-accent-primary);
+  animation: preloader-spin 0.9s linear infinite;
+}
+
+@keyframes preloader-spin {
+  to { transform: rotate(360deg); }
+}
+
+#app-preloader .preloader-text {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.05em;
+}
+
+/* ==========================================================================
+   10. Тонкая полоса загрузки сверху (как в GitHub)
+   --------------------------------------------------------------------------
+   Показывается при долгих переходах, чтобы пользователь видел, что что-то
+   происходит, но не блокировала интерфейс.
+   ========================================================================== */
+
+#app-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 60;
+  background: transparent;
+  pointer-events: none;
+}
+
+#app-loading-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--color-accent-primary) 40%,
+    var(--color-accent-primary) 60%,
+    transparent 100%);
+  transform: translateX(-100%);
+  animation: loading-bar-slide 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+#app-loading-bar.is-hidden {
+  display: none;
+}
+
+@keyframes loading-bar-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ==========================================================================
+   prefers-reduced-motion: отключаем анимации
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-view].view-enter,
+  [data-view].view-leave {
+    animation: none;
+  }
+  #app-preloader .preloader-logo {
+    animation: none;
+  }
+  #app-loading-bar::before {
+    animation: none;
+    transform: none;
+    background: var(--color-accent-primary);
+    opacity: 0.6;
+  }
+}
