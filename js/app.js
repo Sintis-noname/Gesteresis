@@ -48,7 +48,7 @@ class GesteresisApp {
 
   async init() {
     this._bindGlobalEvents();
-    window.Router.showLoader(true);
+    window.Router.showPreloader();
 
     try {
       const [user, subscription, devices] = await Promise.all([
@@ -69,7 +69,7 @@ class GesteresisApp {
     } catch (err) {
       window.toastService.show(`Ошибка инициализации: ${err.message}`, 'error');
     } finally {
-      window.Router.showLoader(false);
+      window.Router.hidePreloader();
     }
   }
 
