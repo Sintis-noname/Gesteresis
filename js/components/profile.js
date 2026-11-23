@@ -79,7 +79,7 @@ const Profile = {
       <!-- Шапка -->
       <div class="flex flex-wrap items-center justify-between gap-4 bg-bg-surface border border-border-subtle rounded-card p-5">
         <div class="flex items-center gap-4">
-          <a href="#/" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-bg-elevated hover:bg-bg-surface text-text-primary border border-border-subtle transition">
+          <a href="#/dashboard" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-bg-elevated hover:bg-bg-surface text-text-primary border border-border-subtle transition">
             ← Назад к дашборду
           </a>
           <div>
@@ -309,7 +309,7 @@ const Profile = {
         app.state.user = null;
         app._renderAuthHeader();
         window.toastService.show('Вы вышли из учётной записи', 'info');
-        window.location.hash = '#/';
+        window.location.hash = '#/dashboard';
       });
     }
   },
