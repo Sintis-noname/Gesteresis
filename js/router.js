@@ -62,9 +62,14 @@ const Router = {
         render: (app) => this._renderProfile(app),
       },
       {
-        pattern: /^#\/?$/,
+        pattern: /^#\/dashboard$/,
         view: 'dashboard',
         render: (app) => this._renderDashboard(app),
+      },
+      {
+        pattern: /^#\/?$/,           // ← корень сайта = лендинг
+        view: 'landing',
+        render: (app) => this._renderLanding(app),
       },
     ];
 
@@ -225,6 +230,14 @@ const Router = {
   _renderProfile(app) {
     if (window.Profile) {
       window.Profile.render(app);
+    }
+  },
+  /**
+   * @private
+   */
+  _renderLanding(app) {
+    if (window.Landing) {
+      window.Landing.render(app);
     }
   },
 };
