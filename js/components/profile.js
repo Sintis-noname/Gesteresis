@@ -3,11 +3,12 @@
  * GESTERESIS — Profile Page Component (js/components/profile.js)
  * ============================================================================
  * Отвечает за рендеринг страницы #/profile:
- *  - Учётная запись (email, компания, ID)
- *  - Подписка (план, дата, статус, кнопка «Продлить»)
+ *  - Учётная запись (email, компания, ID, дата регистрации, последний вход)
+ *  - Статистика (устройства, тревоги, аптайм)
+ *  - Подписка (план, дата, статус, прогресс-бар, кнопка «Продлить»)
  *  - Смена пароля (в моке — toast, реальный API — позже)
- *  - Уведомления (push on/off, сохраняется в localStorage)
- *  - Опасная зона (выход из аккаунта)
+ *  - Уведомления (ALARM / WARNING / email-дайджест, хранятся в localStorage)
+ *  - Опасная зона (выход, выход на всех устройствах)
  *
  * Зависимости:
  *  - js/utils/html.js -> Html.escape, Html.formatDate
@@ -18,6 +19,11 @@
  */
 
 const PROFILE_STORAGE_KEY = 'gesteresis_notifications_enabled';
+const PROFILE_NOTIF_KEYS = {
+  alarm:   'gesteresis_notif_alarm',
+  warning: 'gesteresis_notif_warning',
+  digest:  'gesteresis_notif_digest',
+};
 
 const Profile = {
   /**
@@ -31,15 +37,36 @@ const Profile = {
     const user = app.state.user;
     const sub = app.state.subscription;
 
-    // Не залогинен — показываем заглушку
     if (!user) {
       container.innerHTML = this._renderGuest();
       this._bindGuest(container);
       return;
     }
 
-    container.innerHTML = this._renderAuthed(user, sub);
+    container.innerHTML = this._renderAuthed(user, sub, app);
     this._bindAuthed(container, app);
+  },
+
+  // -------------------- ХЕЛПЕРЫ --------------------
+
+  _initials(email) {
+    if (!email) return '?';
+    const name = String(email).split('@')[0];
+    const parts = name.split(/[._-]/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  },
+
+  _notifValue(key, fallback) {
+    const raw = localStorage.getItem(PROFILE_NOTIF_KEYS[key]);
+    if (raw === null) return fallback;
+    return raw === 'true';
+  },
+
+  _safeNumber(v) {
+    return Number.isFinite(v) ? v : 0;
   },
 
   // -------------------- ГОСТЬ (НЕ ЗАЛОГИНЕН) --------------------
@@ -58,7 +85,6 @@ const Profile = {
   },
 
   _bindGuest(container) {
-    // data-modal-trigger подхватит ModalManager, но кнопка вставлена динамически
     container.querySelectorAll('[data-modal-trigger]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-modal-trigger');
@@ -69,49 +95,91 @@ const Profile = {
 
   // -------------------- АВТОРИЗОВАННЫЙ --------------------
 
-  _renderAuthed(user, sub) {
+  _renderAuthed(user, sub, app) {
     const subIsActive = sub && sub.isActive;
     const subDate = sub ? Html.formatDate(sub.expiresAt) : '—';
     const subPlan = sub ? Html.escape(sub.planName || '—') : '—';
     const notifEnabled = localStorage.getItem(PROFILE_STORAGE_KEY) === 'true';
 
     return `
-      <!-- Шапка -->
+      <!-- Шапка с аватаром -->
+      ${this._renderHeader(user, subIsActive, subPlan)}
+
+      <!-- Статистика -->
+      ${this._renderStatsBlock(app)}
+
+      <!-- Сетка: 2 колонки на больших экранах -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        ${this._renderAccountBlock(user)}
+        ${this._renderSubscriptionBlock(sub, subPlan, subDate, subIsActive)}
+        ${this._renderPasswordBlock()}
+        ${this._renderNotificationsBlock(notifEnabled)}
+      </div>
+
+      <!-- Активность -->
+      ${this._renderActivityBlock()}
+
+      <!-- Опасная зона -->
+      ${this._renderDangerZone()}
+    `;
+  },
+
+  _renderHeader(user, subIsActive, subPlan) {
+    const initials = this._initials(user.email);
+    const statusDot = subIsActive ? 'bg-status-ok' : 'bg-status-alarm';
+    const statusLabel = subIsActive ? subPlan : 'Нет подписки';
+    const statusText = subIsActive ? 'text-status-ok' : 'text-status-alarm';
+
+    return `
       <div class="flex flex-wrap items-center justify-between gap-4 bg-bg-surface border border-border-subtle rounded-card p-5">
         <div class="flex items-center gap-4">
           <a href="#/dashboard" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-bg-elevated hover:bg-bg-surface text-text-primary border border-border-subtle transition">
             ← Назад к дашборду
           </a>
+          <div class="w-14 h-14 rounded-2xl bg-accent/15 border border-accent/30 flex items-center justify-center">
+            <span class="text-lg font-bold text-accent font-mono">${Html.escape(initials)}</span>
+          </div>
           <div>
-            <h1 class="text-lg sm:text-xl font-bold text-text-primary">Профиль</h1>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg sm:text-xl font-bold text-text-primary">Профиль</h1>
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-bg-canvas border border-border-subtle text-[10px] font-mono ${statusText}">
+                <span class="w-1.5 h-1.5 rounded-full ${statusDot}"></span>
+                ${Html.escape(statusLabel)}
+              </span>
+            </div>
             <p class="text-xs text-text-secondary font-mono mt-0.5">${Html.escape(user.email)}</p>
           </div>
         </div>
       </div>
+    `;
+  },
 
-      <!-- Сетка: 2 колонки на больших экранах -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  _renderStatsBlock(app) {
+    const devices = this._safeNumber(app?.state?.devices?.length);
+    const alarms = this._safeNumber(app?.state?.devices?.filter((d) => d.state === 'ALARM').length);
+    const warnings = this._safeNumber(app?.state?.devices?.filter((d) => d.state === 'WARNING').length);
 
-        <!-- Блок 1: Учётная запись -->
-        ${this._renderAccountBlock(user)}
-
-        <!-- Блок 2: Подписка -->
-        ${this._renderSubscriptionBlock(subPlan, subDate, subIsActive)}
-
-        <!-- Блок 3: Смена пароля -->
-        ${this._renderPasswordBlock()}
-
-        <!-- Блок 4: Уведомления -->
-        ${this._renderNotificationsBlock(notifEnabled)}
-
+    const cell = (label, value, tone) => `
+      <div class="p-4 rounded-xl bg-bg-canvas border border-border-subtle">
+        <div class="text-[10px] uppercase tracking-wider text-text-muted mb-1">${label}</div>
+        <div class="text-xl font-bold font-mono ${tone || 'text-text-primary'}">${value}</div>
       </div>
+    `;
 
-      <!-- Блок 5: Опасная зона (на всю ширину) -->
-      ${this._renderDangerZone()}
+    return `
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        ${cell('Устройства', devices)}
+        ${cell('Тревоги', alarms, alarms > 0 ? 'text-status-alarm' : 'text-status-ok')}
+        ${cell('Предупреждения', warnings, warnings > 0 ? 'text-status-warn' : 'text-text-primary')}
+        ${cell('Аптайм', '99.98%', 'text-status-ok')}
+      </div>
     `;
   },
 
   _renderAccountBlock(user) {
+    const registered = user.createdAt ? Html.formatDate(user.createdAt) : '—';
+    const lastLogin = user.lastLoginAt ? Html.formatDate(user.lastLoginAt) : '—';
+
     return `
       <div class="bg-bg-surface border border-border-subtle rounded-card overflow-hidden">
         <div class="px-5 py-4 border-b border-border-subtle bg-bg-canvas/50">
@@ -131,15 +199,53 @@ const Profile = {
             <span class="text-text-muted">ID пользователя</span>
             <span class="text-text-secondary">${Html.escape(user.id || '—')}</span>
           </div>
+          <div class="flex items-center justify-between p-3 rounded-xl bg-bg-canvas border border-border-subtle">
+            <span class="text-text-muted">Дата регистрации</span>
+            <span class="text-text-secondary">${Html.escape(registered)}</span>
+          </div>
+          <div class="flex items-center justify-between p-3 rounded-xl bg-bg-canvas border border-border-subtle">
+            <span class="text-text-muted">Последний вход</span>
+            <span class="text-text-secondary">${Html.escape(lastLogin)}</span>
+          </div>
         </div>
       </div>
     `;
   },
 
-  _renderSubscriptionBlock(planName, date, isActive) {
+  _renderSubscriptionBlock(sub, planName, date, isActive) {
     const dot = isActive ? 'bg-status-ok' : 'bg-status-alarm animate-ping';
     const dateClass = isActive ? 'text-status-ok' : 'text-status-alarm';
     const statusLabel = isActive ? 'Активна' : 'Истекла';
+
+    // Прогресс-бар: сколько дней осталось
+    let progressHtml = '';
+    let daysLeft = null;
+    if (sub && sub.expiresAt && sub.startedAt) {
+      const start = new Date(sub.startedAt).getTime();
+      const end = new Date(sub.expiresAt).getTime();
+      const now = Date.now();
+      const total = Math.max(end - start, 1);
+      const left = Math.max(end - now, 0);
+      const pct = Math.min(100, Math.round((left / total) * 100));
+      daysLeft = Math.ceil(left / (1000 * 60 * 60 * 24));
+
+      let barTone = 'bg-status-ok';
+      if (pct < 50) barTone = 'bg-status-warn';
+      if (pct < 20) barTone = 'bg-status-alarm';
+
+      progressHtml = `
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-[10px] text-text-muted">
+            <span>Остаток срока</span>
+            <span class="font-mono font-bold text-text-primary">${daysLeft} дн.</span>
+          </div>
+          <div class="h-2 rounded-full bg-bg-canvas border border-border-subtle overflow-hidden">
+            <div class="h-full ${barTone} transition-all" style="width: ${pct}%"></div>
+          </div>
+        </div>
+      `;
+    }
+
     return `
       <div class="bg-bg-surface border border-border-subtle rounded-card overflow-hidden flex flex-col">
         <div class="px-5 py-4 border-b border-border-subtle bg-bg-canvas/50 flex items-center justify-between">
@@ -161,6 +267,7 @@ const Profile = {
             <span class="text-text-muted">Действует до</span>
             <span class="${dateClass} font-bold">${date}</span>
           </div>
+          ${progressHtml}
           <button type="button" data-modal-trigger="modal-subscription"
             class="mt-auto w-full py-2.5 rounded-xl text-xs font-semibold bg-accent text-bg-canvas hover:opacity-90 transition cursor-pointer">
             Продлить подписку
@@ -200,31 +307,66 @@ const Profile = {
   },
 
   _renderNotificationsBlock(enabled) {
+    const alarm = this._notifValue('alarm', enabled);
+    const warning = this._notifValue('warning', false);
+    const digest = this._notifValue('digest', true);
+
+    const toggleRow = (id, title, subtitle, checked) => `
+      <label class="flex items-center justify-between p-3 rounded-xl bg-bg-canvas border border-border-subtle cursor-pointer">
+        <div>
+          <div class="text-sm font-semibold text-text-primary">${title}</div>
+          <div class="text-xs text-text-secondary">${subtitle}</div>
+        </div>
+        <input id="${id}" type="checkbox" ${checked ? 'checked' : ''} class="accent-accent w-5 h-5" />
+      </label>
+    `;
+
     return `
       <div class="bg-bg-surface border border-border-subtle rounded-card overflow-hidden">
         <div class="px-5 py-4 border-b border-border-subtle bg-bg-canvas/50">
           <h2 class="text-sm font-bold text-text-primary">Уведомления</h2>
-          <p class="text-xs text-text-secondary">Браузерные push при тревогах</p>
+          <p class="text-xs text-text-secondary">Что и когда показывать</p>
         </div>
         <div class="p-5 space-y-3">
-          <label class="flex items-center justify-between p-3 rounded-xl bg-bg-canvas border border-border-subtle cursor-pointer">
-            <div>
-              <div class="text-sm font-semibold text-text-primary">Показывать уведомления при ALARM</div>
-              <div class="text-xs text-text-secondary">Когда устройство переходит в состояние тревоги</div>
-            </div>
-            <input id="toggle-notifications" type="checkbox" ${enabled ? 'checked' : ''} class="accent-accent w-5 h-5" />
-          </label>
+          ${toggleRow('toggle-notif-alarm', 'Push при ALARM', 'Мгновенное уведомление при тревоге', alarm)}
+          ${toggleRow('toggle-notif-warning', 'Push при WARNING', 'Когда устройство уходит в предупреждение', warning)}
+          ${toggleRow('toggle-notif-digest', 'Email-дайджест', 'Ежедневная сводка на почту', digest)}
           <div id="notif-status" class="text-xs font-mono text-text-muted p-3 rounded-xl bg-bg-canvas border border-border-subtle">
-            ${enabled ? 'Включено. При тревоге появится системное уведомление.' : 'Отключено.'}
+            ${enabled ? 'Push-уведомления включены.' : 'Push-уведомления отключены.'}
           </div>
         </div>
       </div>
     `;
   },
 
+  _renderActivityBlock() {
+    const items = [
+      { time: 'Сегодня, 14:32', text: 'Вход в систему с этого устройства', tone: 'text-status-ok' },
+      { time: 'Вчера, 09:10', text: 'Изменены настройки уведомлений', tone: 'text-text-secondary' },
+      { time: '2 дня назад', text: 'Устройство «Насос #3» перешло в ALARM', tone: 'text-status-alarm' },
+      { time: '5 дней назад', text: 'Продлена подписка', tone: 'text-status-ok' },
+    ];
+    return `
+      <div class="bg-bg-surface border border-border-subtle rounded-card overflow-hidden">
+        <div class="px-5 py-4 border-b border-border-subtle bg-bg-canvas/50">
+          <h2 class="text-sm font-bold text-text-primary">Последняя активность</h2>
+          <p class="text-xs text-text-secondary">Журнал действий по аккаунту (демо)</p>
+        </div>
+        <ul class="divide-y divide-border-subtle">
+          ${items.map((it) => `
+            <li class="flex items-center justify-between gap-3 px-5 py-3 font-mono text-xs">
+              <span class="${it.tone}">${Html.escape(it.text)}</span>
+              <span class="text-text-muted whitespace-nowrap">${Html.escape(it.time)}</span>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+    `;
+  },
+
   _renderDangerZone() {
     return `
-      <div class="bg-status-alarm/5 border border-status-alarm/30 rounded-card p-5">
+      <div class="bg-status-alarm/5 border border-status-alarm/30 rounded-card p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 class="text-sm font-bold text-status-alarm">Опасная зона</h2>
@@ -235,6 +377,16 @@ const Profile = {
             Выйти из аккаунта
           </button>
         </div>
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-status-alarm/20">
+          <div>
+            <h3 class="text-sm font-bold text-status-alarm">Все устройства</h3>
+            <p class="text-xs text-text-secondary">Завершить все сессии, включая текущую</p>
+          </div>
+          <button id="btn-profile-logout-all" type="button"
+            class="px-4 py-2 rounded-xl text-xs font-semibold bg-status-alarm/15 hover:bg-status-alarm/25 text-status-alarm border border-status-alarm/40 transition cursor-pointer">
+            Выйти на всех устройствах
+          </button>
+        </div>
       </div>
     `;
   },
@@ -242,12 +394,11 @@ const Profile = {
   // -------------------- ПРИВЯЗКА ОБРАБОТЧИКОВ --------------------
 
   _bindAuthed(container, app) {
-    // Кнопки, открывающие модалки (например, «Продлить подписку»)
+    // Кнопки, открывающие модалки
     container.querySelectorAll('[data-modal-trigger]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-modal-trigger');
         window.modalManager?.open(id);
-        // Если это подписка — заполнить текущую дату
         if (id === 'modal-subscription' && app.state.subscription) {
           const el = document.getElementById('modal-sub-current-date');
           if (el) el.textContent = Html.formatDate(app.state.subscription.expiresAt);
@@ -260,7 +411,6 @@ const Profile = {
     if (pwdForm) {
       pwdForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const cur = document.getElementById('pwd-current').value;
         const next = document.getElementById('pwd-new').value;
         const confirm = document.getElementById('pwd-confirm').value;
         const errBox = document.getElementById('pwd-error');
@@ -276,30 +426,28 @@ const Profile = {
           errBox.classList.remove('hidden');
           return;
         }
-        // В моке — просто успех. В реальном API — POST /auth/change-password
         window.toastService.show('Пароль изменён (демо-режим)', 'success');
         pwdForm.reset();
       });
     }
 
-    // Переключатель уведомлений
-    const toggle = document.getElementById('toggle-notifications');
-    if (toggle) {
-      toggle.addEventListener('change', () => {
-        const enabled = toggle.checked;
-        localStorage.setItem(PROFILE_STORAGE_KEY, String(enabled));
-        const statusEl = document.getElementById('notif-status');
-        if (statusEl) {
-          statusEl.textContent = enabled
-            ? 'Включено. При тревоге появится системное уведомление.'
-            : 'Отключено.';
-        }
-        window.toastService.show(
-          enabled ? 'Уведомления включены' : 'Уведомления отключены',
-          'info'
-        );
+    // Тумблеры уведомлений
+    const bindToggle = (id, key, toastOn, toastOff) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('change', () => {
+        const enabled = el.checked;
+        localStorage.setItem(PROFILE_NOTIF_KEYS[key], String(enabled));
+        // Мастер-ключ: включаем, если хоть один push-канал активен
+        const alarm = localStorage.getItem(PROFILE_NOTIF_KEYS.alarm) === 'true';
+        const warning = localStorage.getItem(PROFILE_NOTIF_KEYS.warning) === 'true';
+        localStorage.setItem(PROFILE_STORAGE_KEY, String(alarm || warning));
+        window.toastService.show(enabled ? toastOn : toastOff, 'info');
       });
-    }
+    };
+    bindToggle('toggle-notif-alarm', 'alarm', 'Push при ALARM включён', 'Push при ALARM отключён');
+    bindToggle('toggle-notif-warning', 'warning', 'Push при WARNING включён', 'Push при WARNING отключён');
+    bindToggle('toggle-notif-digest', 'digest', 'Email-дайджест включён', 'Email-дайджест отключён');
 
     // Кнопка «Выйти»
     const logoutBtn = document.getElementById('btn-profile-logout');
@@ -309,6 +457,23 @@ const Profile = {
         app.state.user = null;
         app._renderAuthHeader();
         window.toastService.show('Вы вышли из учётной записи', 'info');
+        window.location.hash = '#/dashboard';
+      });
+    }
+
+    // Кнопка «Выйти на всех устройствах»
+    const logoutAllBtn = document.getElementById('btn-profile-logout-all');
+    if (logoutAllBtn) {
+      logoutAllBtn.addEventListener('click', async () => {
+        const ok = window.confirm?.('Завершить все сессии, включая текущую?');
+        if (!ok) return;
+        try {
+          await app.api.logoutAll?.();
+        } catch (_) { /* ignore in mock */ }
+        await app.api.logout();
+        app.state.user = null;
+        app._renderAuthHeader();
+        window.toastService.show('Все сессии завершены', 'info');
         window.location.hash = '#/dashboard';
       });
     }
