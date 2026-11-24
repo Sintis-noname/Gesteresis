@@ -760,6 +760,12 @@ const LEGAL_PAGES = {
   contacts: {
     title: 'Контакты',
     updated: '2025-01-01',
+    banner: {
+      logo: 'assets/fsi.png',
+      logoAlt: 'Фонд содействия инновациям',
+      heading: 'Поддержано Фондом содействия инновациям',
+      text: 'Проект EcoSense прошёл конкурсный отбор и получил грантовую поддержку в рамках программы «Студенческий стартап» (VII очередь).',
+    },
     sections: [
       {
         heading: 'Юридическое лицо',
@@ -820,6 +826,26 @@ const Legal = {
           </section>
         `).join('')}
       </article>
+
+      <!-- Плашка «Поддержано Фондом содействия инновациям» -->
+      ${page.banner ? `
+        <div class="bg-bg-surface border border-[#C9A24A]/60 rounded-card p-6 sm:p-8 flex flex-col items-center text-center gap-4">
+          <img
+            src="${Html.escape(page.banner.logo)}"
+            alt="${Html.escape(page.banner.logoAlt)}"
+            class="h-16 sm:h-20 w-auto object-contain"
+            loading="lazy"
+          />
+          <div class="space-y-2 max-w-2xl">
+            <h2 class="text-base sm:text-lg font-bold text-[#C9A24A]">
+              ${Html.escape(page.banner.heading)}
+            </h2>
+            <p class="text-sm text-text-secondary leading-relaxed">
+              ${Html.escape(page.banner.text)}
+            </p>
+          </div>
+        </div>
+      ` : ''}
     `;
   },
 
