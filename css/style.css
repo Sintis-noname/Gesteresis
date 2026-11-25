@@ -211,7 +211,8 @@ input[type="number"] {
   width: 64px;
   height: 64px;
   border-radius: 1rem;
-  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-danger));
+  background: transparent;
+  border: 2px solid var(--color-accent-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -220,8 +221,8 @@ input[type="number"] {
 }
 
 @keyframes preloader-pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 40px -10px var(--color-accent-primary); }
-  50%      { transform: scale(1.06); box-shadow: 0 0 60px -5px var(--color-accent-primary); }
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 30px -10px var(--color-accent-primary); }
+  50%      { transform: scale(1.04); box-shadow: 0 0 45px -5px  var(--color-accent-primary); }
 }
 
 #app-preloader .preloader-spinner {
@@ -302,4 +303,114 @@ input[type="number"] {
     background: var(--color-accent-primary);
     opacity: 0.6;
   }
+}
+
+/* ==========================================================================
+   11. Кастомные ползунки (range) для ROI-калькулятора
+   ========================================================================== */
+input[type="range"].g-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--color-border-subtle);
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  margin: 8px 0;
+}
+
+/* WebKit (Chrome, Safari, Edge) */
+input[type="range"].g-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent-primary);
+  border: 2px solid var(--color-bg-surface);
+  box-shadow: 0 0 8px var(--color-accent-primary);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"].g-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* Firefox */
+input[type="range"].g-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent-primary);
+  border: 2px solid var(--color-bg-surface);
+  box-shadow: 0 0 8px var(--color-accent-primary);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"].g-range::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"].g-range::-moz-range-track {
+  height: 6px;
+  background: var(--color-border-subtle);
+  border-radius: 999px;
+}
+
+/* Заполненная часть (WebKit не умеет без JS, но Firefox умеет) */
+input[type="range"].g-range::-moz-range-progress {
+  background-color: var(--color-accent-primary);
+  height: 6px;
+  border-radius: 999px;
+}
+
+/* ==========================================================================
+   12. FAQ Аккордеон (Лендинг)
+   ========================================================================== */
+
+/* Обертка для анимации */
+.g-faq-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease-out, opacity 0.3s ease-out;
+  opacity: 0;
+}
+
+/* Внутренний контейнер (обязательно нужен для работы grid-трюка) */
+.g-faq-answer > div {
+  overflow: hidden;
+}
+
+/* Состояние "открыто" */
+.g-faq-item.is-open .g-faq-answer {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+/* Вращение стрелочки */
+.g-faq-chevron {
+  transition: transform 0.3s ease;
+}
+
+.g-faq-item.is-open .g-faq-chevron {
+  transform: rotate(180deg);
+}
+
+/* Ховер на заголовок */
+.g-faq-toggle:hover span {
+  color: var(--color-accent-primary);
+}
+
+/* ==========================================================================
+   13. Отступы для якорной прокрутки (Лендинг)
+   ========================================================================== */
+#landing-about,
+#landing-pricing,
+#landing-roi,
+#landing-compare,
+#landing-faq {
+  scroll-margin-top: 80px;
 }
