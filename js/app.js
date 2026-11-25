@@ -156,18 +156,24 @@ class GesteresisApp {
         this.state.devices[idx] = updatedDevice;
       }
 
-      if (!window.location.hash.startsWith('#/device/')) {
-        // Дашборд: точечное обновление карточки + KPI
+      const currentHash = window.location.hash || '#/';
+
+      if (currentHash.startsWith('#/device/')) {
+        // Детальная страница: перерендер только если это то же устройство
+        const currentDetailId = decodeURIComponent(currentHash.replace('#/device/', ''));
+        if (currentDetailId === updatedDevice.id) {
+          window.Router.handleRoute(); // или лучше DeviceDetail.render напрямую
+        }
+      } else if (currentHash === '#/dashboard' || currentHash === '#') {
+        // Дашборд (или старый формат '#') — точечное обновление
         window.KpiBar.update(this.state.devices);
         const hoverIndex = this.state.hoverIndices[updatedDevice.id] ?? null;
         const patched = window.DeviceCard.patch(updatedDevice, hoverIndex);
         if (!patched) window.Router.handleRoute();
       } else {
-        // Детальная страница: перерендер, если это то же устройство
-        const currentDetailId = decodeURIComponent(window.location.hash.replace('#/device/', ''));
-        if (currentDetailId === updatedDevice.id) {
-          window.Router.handleRoute();
-        }
+        // Лендинг (#/), профиль, legal — НИЧЕГО НЕ ДЕЛАЕМ.
+        // Данные обновляются в памяти (state.devices), это нормально.
+        // Когда пользователь вернётся на дашборд, увидит актуальные данные.
       }
     });
   }
