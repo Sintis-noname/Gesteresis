@@ -102,7 +102,7 @@
           <div>
             <div class="flex items-center gap-2">
               <span class="font-mono font-bold text-lg tracking-wider text-text-primary">GESTERESIS</span>
-              <span class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-accent/10 text-accent border border-accent/30">v0.6.9 Edge AI</span>
+              <span class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-accent/10 text-accent border border-accent/30">v0.7 Edge AI</span>
             </div>
             <p class="text-xs text-text-secondary">Edge AI Predictive Diagnostics</p>
           </div>
@@ -110,14 +110,24 @@
 
         <!-- Навигация лендинга (видна только на #/) -->
         <nav id="header-landing-nav" class="hidden items-center gap-1">
+          <button type="button" data-scroll-to="landing-roi"
+            class="px-3 py-2 rounded-xl text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition">
+            ROI-калькулятор
+          </button>
           <button type="button" data-scroll-to="landing-about"
             class="px-3 py-2 rounded-xl text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition">
-            О системе
+            Как внедрить
           </button>
           <button type="button" data-scroll-to="landing-pricing"
             class="px-3 py-2 rounded-xl text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition">
             Тарифы
           </button>
+          <!-- Новая кнопка -->
+          <button type="button" data-scroll-to="landing-faq"
+            class="px-3 py-2 rounded-xl text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition">
+            FAQ
+          </button>
+          
           <a href="#/legal/contacts"
             class="px-3 py-2 rounded-xl text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition">
             Контакты
@@ -191,7 +201,7 @@
     </section>
 
     <!-- VIEW 1: ОСНОВНОЙ ДАШБОРД ЧИПОВ -->
-    <section id="view-dashboard" data-view="dashboard" class="space-y-6">
+    <section id="view-dashboard" data-view="dashboard" class="hidden space-y-6">
 
       <!-- Панель сводных KPI -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -277,46 +287,47 @@
   </main>
 
   <!-- ==================== FOOTER ==================== -->
-<footer class="border-t border-border-subtle bg-bg-canvas/70 py-6 mt-10">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+  <footer class="border-t border-border-subtle bg-bg-canvas/70 py-6 mt-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
 
-    <nav class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-text-secondary mb-2" aria-label="Навигация">
-      <a href="#/" class="hover:text-accent transition">Главная</a>
-      <span class="text-border-strong hidden sm:inline">•</span>
-      <a href="#/dashboard" class="hover:text-accent transition">Дашборд</a>
-      <span class="text-border-strong hidden sm:inline">•</span>
-      <a href="#/profile" class="hover:text-accent transition">Профиль</a>
-    </nav>
-    <!-- Юридические ссылки -->
-    <nav class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-text-secondary" aria-label="Юридическая информация">
-      <a href="#/legal/privacy" class="hover:text-accent transition">Политика конфиденциальности</a>
-      <span class="text-border-strong hidden sm:inline">•</span>
-      <a href="#/legal/terms" class="hover:text-accent transition">Пользовательское соглашение</a>
-      <span class="text-border-strong hidden sm:inline">•</span>
-      <a href="#/legal/pd" class="hover:text-accent transition">Обработка персональных данных</a>
-      <span class="text-border-strong hidden sm:inline">•</span>
-      <a href="#/legal/cookies" class="hover:text-accent transition">Файлы cookie</a>
-      <span class="text-border-strong hidden sm:inline">•</span>
-      <a href="#/legal/security" class="hover:text-accent transition">Безопасность и SLA</a>
-      <span class="text-border-strong hidden sm:inline">•</span>
-      <a href="#/legal/contacts" class="hover:text-accent transition">Контакты</a>
-    </nav>
+      <!-- Верхний ряд: Навигация слева, Юридические ссылки справа -->
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-text-secondary">
+        
+        <!-- Навигация (Главная, Дашборд, Профиль) -->
+        <nav class="flex items-center gap-5" aria-label="Навигация">
+          <a href="#/" class="hover:text-accent transition">Главная</a>
+          <a href="#/dashboard" class="hover:text-accent transition">Дашборд</a>
+          <a href="#/profile" class="hover:text-accent transition">Профиль</a>
+        </nav>
 
-    <!-- Техническая строка -->
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-text-muted font-mono">
-      <div>GESTERESIS EDGE AI SYSTEM • PROTOCOL v0.3 (ADR-0003 / ADR-0004)</div>
-      <div>CALIBRATION BLOB: 644 BYTES (NVS) • DIM: 12 FEATURES</div>
-    </div>
+        <!-- Юридические ссылки -->
+        <nav class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2" aria-label="Юридическая информация">
+          <a href="#/legal/privacy" class="hover:text-accent transition">Политика конфиденциальности</a>
+          <a href="#/legal/terms" class="hover:text-accent transition">Пользовательское соглашение</a>
+          <a href="#/legal/pd" class="hover:text-accent transition">Обработка персональных данных</a>
+          <a href="#/legal/cookies" class="hover:text-accent transition">Файлы cookie</a>
+          <a href="#/legal/security" class="hover:text-accent transition">Безопасность и SLA</a>
+          <a href="#/legal/contacts" class="hover:text-accent transition">Контакты</a>
+        </nav>
 
-    <!-- Копирайт -->
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-text-muted">
-      <div>© <span id="footer-year">2025</span> Gesteresis. Все права защищены.</div>
-      <div class="text-center sm:text-right">
-        ООО «ПРОЕКТ 11» • ИНН 0272938548 • 123456, г. Белебей, ул. Лесная, д. 12
       </div>
+
+      <!-- Техническая строка -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-text-muted font-mono">
+        <div>GESTERESIS EDGE AI SYSTEM • PROTOCOL v0.3 (ADR-0003 / ADR-0004)</div>
+        <div>CALIBRATION BLOB: 644 BYTES (NVS) • DIM: 12 FEATURES</div>
+      </div>
+
+      <!-- Копирайт -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-text-muted">
+        <div>© <span id="footer-year">2025</span> Gesteresis. Все права защищены.</div>
+        <div class="text-center sm:text-right">
+          ООО «ПРОЕКТ 11» • ИНН 0272938548 • 123456, г. Белебей, ул. Лесная, д. 12
+        </div>
+      </div>
+
     </div>
-  </div>
-</footer>
+  </footer>
 
   <!-- ==================== MODAL: НАСТРОЙКИ ЧИПА ==================== -->
   <div id="modal-settings" class="fixed inset-0 z-50 hidden items-center justify-center bg-bg-canvas/80 backdrop-blur-sm p-4">
