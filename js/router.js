@@ -133,15 +133,21 @@ const Router = {
       }, 150);
     }
 
+        // Определяем, сменилась ли страница (view), а не просто обновились данные
+    const allViews = Array.from(document.querySelectorAll('[data-view]'));
+    const currentViewEl = allViews.find(el => !el.classList.contains('hidden'));
+    const isViewChanging = !currentViewEl || currentViewEl.dataset.view !== matchedRoute.view;
+
     try {
       // 1. Анимированно скрываем текущую view
       await this._showView(matchedRoute.view);
 
       if (currentPromise.cancelled) return;
 
-      // 2. Сбрасываем скролл в начало — ДО рендера,
-      //    чтобы новая страница появилась с самого верха
-      this._scrollToTop();
+      // 2. Сбрасываем скролл в начало ТОЛЬКО если реально сменилась страница
+      if (isViewChanging) {
+        this._scrollToTop();
+      }
 
       // 3. Рендерим новую view
       matchedRoute.render(this.app, ...matchedParams);
@@ -173,28 +179,30 @@ const Router = {
     const target = allViews.find(el => el.dataset.view === viewName);
     const current = allViews.find(el => !el.classList.contains('hidden'));
 
-    // Если уже на этой view — ничего не делаем
-    if (current === target && target) return;
+    // Мгновенно обновляем шапку (скрываем подписку/LIVE на лендинге)
+    // ДО начала анимации, чтобы не было "моргания"
+    this._updateHeaderForView(viewName);
+
+    if (current === target && target) {
+      // Если мы уже на этой странице, просто убеждаемся, что шапка правильная
+      return;
+    }
 
     const duration = this._getTransitionDuration();
 
-    // 1. Уводим текущую view (fade-out)
     if (current) {
       current.classList.add('view-leave');
     }
 
-    // 2. Сразу убираем .hidden у целевой, чтобы она участвовала в layout
     if (target) {
       target.classList.remove('hidden');
       target.classList.add('view-enter');
     }
 
-    // 3. Ждём окончания анимации ухода
     if (duration > 0 && current) {
       await new Promise(r => setTimeout(r, duration));
     }
 
-    // 4. Прячем все остальные view и снимаем классы анимации
     allViews.forEach(el => {
       if (el === target) {
         el.classList.remove('view-enter');
@@ -205,9 +213,6 @@ const Router = {
         el.classList.remove('view-enter');
       }
     });
-
-    // 5. Обновляем шапку
-    this._updateHeaderForView(viewName);
   },
 
   /**
