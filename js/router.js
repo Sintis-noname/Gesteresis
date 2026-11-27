@@ -232,22 +232,31 @@ const Router = {
    * в рабочем интерфейсе инженера.
    * @private
    */
-  _updateHeaderForView(viewName) {
-    const isLanding = viewName === 'landing';
+    _updateHeaderForView(viewName) {
+    // На лендинге и юридических страницах скрываем подписку и LIVE.
+    // На странице профиля — тоже, если пользователь не авторизован.
+    const isPublicView = 
+      viewName === 'landing' || 
+      viewName === 'legal' || 
+      (viewName === 'profile' && !this.app?.state?.user);
 
+    // 1. Блок подписки (виден только авторизованным в дашборде/деталях)
     const subscriptionBlock = document.getElementById('header-subscription-block');
     if (subscriptionBlock) {
-      subscriptionBlock.classList.toggle('hidden', isLanding);
+      // Показываем, если это НЕ публичная страница
+      subscriptionBlock.classList.toggle('hidden', isPublicView);
     }
 
+    // 2. Кнопка LIVE (видна только в рабочих разделах)
     const streamBlock = document.getElementById('header-stream-block');
     if (streamBlock) {
-      streamBlock.classList.toggle('hidden', isLanding);
+      streamBlock.classList.toggle('hidden', isPublicView);
     }
 
-    // Навигация лендинга: visible только на лендинге
+    // 3. Навигация лендинга (О системе, Тарифы и т.д.)
     const landingNav = document.getElementById('header-landing-nav');
     if (landingNav) {
+      const isLanding = viewName === 'landing';
       landingNav.classList.toggle('hidden', !isLanding);
       landingNav.classList.toggle('flex', isLanding);
     }
