@@ -22,6 +22,18 @@
  */
 
 const DeviceDetail = {
+  /** Безопасное число: Number() + isFinite, иначе '—'. */
+  _safeNum(v, digits) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n.toFixed(digits) : '—';
+  },
+
+  /** Безопасная экспонента: Number() + isFinite, иначе '—'. */
+  _safeExp(v, digits) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n.toExponential(digits) : '—';
+  },
+
   /**
    * Рендерит страницу детальной диагностики.
    *
@@ -146,7 +158,7 @@ const DeviceDetail = {
    */
   _renderFeatureRows(t) {
     return FEATURE_SCHEMA_X12.map(f => {
-      const mockVal = f.key === 'rms_x' ? t.rms.toFixed(4) : '— (ожидание /raw)';
+      const mockVal = f.key === 'rms_x' ? this._safeNum(t.rms, 4) : '— (ожидание /raw)';
       return `
         <tr class="hover:bg-bg-elevated/50">
           <td class="py-2 px-4 text-text-muted">${f.idx}</td>
@@ -178,19 +190,19 @@ const DeviceDetail = {
         <div class="grid grid-cols-2 gap-3 font-mono text-xs">
           <div class="p-3 rounded-xl bg-bg-canvas border border-border-subtle">
             <span class="text-text-muted block text-[10px]">D_m (Kalman / Raw)</span>
-            <span class="text-sm font-bold text-text-primary mt-0.5 block">${t.d_m_filtered.toFixed(3)} / ${t.d_m.toFixed(3)}</span>
+            <span class="text-sm font-bold text-text-primary mt-0.5 block">${this._safeNum(t.d_m_filtered, 3)} / ${this._safeNum(t.d_m, 3)}</span>
           </div>
           <div class="p-3 rounded-xl bg-bg-canvas border border-border-subtle">
             <span class="text-text-muted block text-[10px]">Порог тревоги (threshold)</span>
-            <span class="text-sm font-bold text-status-alarm mt-0.5 block">${dev.threshold.toFixed(2)}</span>
+            <span class="text-sm font-bold text-status-alarm mt-0.5 block">${this._safeNum(dev.threshold, 2)}</span>
           </div>
           <div class="p-3 rounded-xl bg-bg-canvas border border-border-subtle">
             <span class="text-text-muted block text-[10px]">Число обусловленности cond(S)</span>
-            <span class="text-sm font-bold text-status-warn mt-0.5 block">${dev.cond_number ? dev.cond_number.toExponential(2) : '—'}</span>
+            <span class="text-sm font-bold text-status-warn mt-0.5 block">${this._safeExp(dev.cond_number, 2)}</span>
           </div>
           <div class="p-3 rounded-xl bg-bg-canvas border border-border-subtle">
             <span class="text-text-muted block text-[10px]">Номинал RPM / Magic</span>
-            <span class="text-sm font-bold text-text-primary mt-0.5 block">${dev.nominal_rpm} / 0x47455354</span>
+            <span class="text-sm font-bold text-text-primary mt-0.5 block">${Html.escape(dev.nominal_rpm)} / 0x47455354</span>
           </div>
         </div>
       </div>
