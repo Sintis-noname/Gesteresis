@@ -21,6 +21,20 @@
  */
 
 const DeviceCard = {
+
+  /**
+   * Безопасное число: приводит к Number, проверяет на конечность,
+   * возвращает toFixed(digits) или '—'. Защищает от строк/NaN/Infinity
+   * с бэка и от XSS при вставке в innerHTML.
+   * @param {*} v
+   * @param {number} digits
+   * @returns {string}
+   */
+  _safeNum(v, digits) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n.toFixed(digits) : '—';
+  },
+
   /**
    * Собирает HTML карточки чипа.
    *
@@ -42,7 +56,7 @@ const DeviceCard = {
       : '';
 
     return `
-      <article id="card-${Html.escape(dev.id)}" class="bg-bg-surface border ${cardBorder} rounded-card overflow-hidden shadow-xl transition flex flex-col">
+      <article id="card-${Html.safeId(dev.id)}" class="bg-bg-surface border ${cardBorder} rounded-card overflow-hidden shadow-xl transition flex flex-col">
 
         <!-- ШАПКА КАРТОЧКИ -->
         <div class="p-4 sm:p-5 bg-bg-canvas/60 border-b border-border-subtle space-y-3">
@@ -57,23 +71,23 @@ const DeviceCard = {
                   Model: ${Html.escape(dev.model_source)}
                 </span>
               </div>
-              <h2 id="title-${Html.escape(dev.id)}" class="text-base sm:text-lg font-bold text-text-primary leading-snug">
+              <h2 id="title-${Html.safeId(dev.id)}" class="text-base sm:text-lg font-bold text-text-primary leading-snug">
                 ${Html.escape(dev.name)}
               </h2>
             </div>
 
-            <div id="status-badge-${Html.escape(dev.id)}">
+            <div id="status-badge-${Html.safeId(dev.id)}">
               ${statusBadge}
             </div>
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
-            <div id="faults-${Html.escape(dev.id)}" class="flex flex-wrap items-center gap-1.5">
+            <div id="faults-${Html.safeId(dev.id)}" class="flex flex-wrap items-center gap-1.5">
               ${faultBadges}
             </div>
 
             <div class="flex items-center gap-2 ml-auto">
-              <button id="btn-settings-${Html.escape(dev.id)}" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-bg-elevated hover:bg-bg-surface text-text-primary border border-border-subtle transition cursor-pointer">
+              <button id="btn-settings-${Html.safeId(dev.id)}" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-bg-elevated hover:bg-bg-surface text-text-primary border border-border-subtle transition cursor-pointer">
                 <svg class="w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -81,7 +95,7 @@ const DeviceCard = {
                 <span>Настройки</span>
               </button>
 
-              <button id="btn-details-${Html.escape(dev.id)}" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-accent/15 hover:bg-accent/25 text-accent border border-accent/40 transition cursor-pointer">
+              <button id="btn-details-${Html.safeId(dev.id)}" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-accent/15 hover:bg-accent/25 text-accent border border-accent/40 transition cursor-pointer">
                 <span>Детальная информация</span>
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -95,26 +109,26 @@ const DeviceCard = {
         <div class="grid grid-cols-4 divide-x divide-border-subtle border-b border-border-subtle bg-bg-surface/50">
           <div class="p-3 text-center">
             <div class="text-[10px] font-mono uppercase text-text-secondary">D_m (Kalman)</div>
-            <div id="metric-dm-filt-${Html.escape(dev.id)}" class="mt-0.5 font-mono text-base sm:text-lg font-bold ${isAlarm ? 'text-status-alarm' : 'text-accent'}">
-              ${t.d_m_filtered.toFixed(2)}
+            <div id="metric-dm-filt-${Html.safeId(dev.id)}" class="mt-0.5 font-mono text-base sm:text-lg font-bold ${isAlarm ? 'text-status-alarm' : 'text-accent'}">
+              ${this._safeNum(t.d_m_filtered, 2)}
             </div>
           </div>
           <div class="p-3 text-center">
             <div class="text-[10px] font-mono uppercase text-text-secondary">D_m (Raw)</div>
-            <div id="metric-dm-raw-${Html.escape(dev.id)}" class="mt-0.5 font-mono text-base sm:text-lg font-semibold text-text-primary">
-              ${t.d_m.toFixed(2)}
+            <div id="metric-dm-raw-${Html.safeId(dev.id)}" class="mt-0.5 font-mono text-base sm:text-lg font-semibold text-text-primary">
+              ${this._safeNum(t.d_m, 2)}
             </div>
           </div>
           <div class="p-3 text-center">
             <div class="text-[10px] font-mono uppercase text-text-secondary">RMS (X)</div>
-            <div id="metric-rms-${Html.escape(dev.id)}" class="mt-0.5 font-mono text-base sm:text-lg font-semibold text-text-primary">
-              ${t.rms.toFixed(3)} <span class="text-xs text-text-muted">g</span>
+            <div id="metric-rms-${Html.safeId(dev.id)}" class="mt-0.5 font-mono text-base sm:text-lg font-semibold text-text-primary">
+              ${this._safeNum(t.rms, 3)} <span class="text-xs text-text-muted">g</span>
             </div>
           </div>
           <div class="p-3 text-center">
             <div class="text-[10px] font-mono uppercase text-text-secondary">Порог / RPM</div>
-            <div id="metric-thr-${Html.escape(dev.id)}" class="mt-0.5 font-mono text-xs sm:text-sm font-semibold text-text-primary">
-              ${dev.threshold.toFixed(1)} <span class="text-text-muted">/</span> ${dev.nominal_rpm}
+            <div id="metric-thr-${Html.safeId(dev.id)}" class="mt-0.5 font-mono text-xs sm:text-sm font-semibold text-text-primary">
+              ${this._safeNum(dev.threshold, 1)} <span class="text-text-muted">/</span> ${Html.escape(dev.nominal_rpm)}
             </div>
           </div>
         </div>
@@ -133,11 +147,11 @@ const DeviceCard = {
                 <span class="w-3 h-0.5 border-t border-dashed border-status-alarm inline-block"></span> threshold
               </span>
             </div>
-            <span id="ts-${Html.escape(dev.id)}" class="text-text-muted">Обновлено: ${lastUpdateStr}</span>
+            <span id="ts-${Html.safeId(dev.id)}" class="text-text-muted">Обновлено: ${lastUpdateStr}</span>
           </div>
 
           <div class="relative w-full h-[190px] bg-bg-canvas/70 rounded-xl border border-border-subtle overflow-hidden">
-            <canvas id="canvas-${Html.escape(dev.id)}" class="w-full h-full block cursor-crosshair"></canvas>
+            <canvas id="canvas-${Html.safeId(dev.id)}" class="w-full h-full block cursor-crosshair"></canvas>
           </div>
         </div>
 
@@ -156,40 +170,40 @@ const DeviceCard = {
   patch(dev, hoverIndex = null) {
     const t = dev.telemetry;
     const isAlarm = t.status === 'ALARM';
-    const card = document.getElementById(`card-${dev.id}`);
+    const card = document.getElementById(`card-${Html.safeId(dev.id)}`);
     if (!card) return false;
 
     card.className = `bg-bg-surface border ${isAlarm ? 'border-status-alarm/80 alarm-card-pulse' : 'border-border-subtle hover:border-border-strong'} rounded-card overflow-hidden shadow-xl transition flex flex-col`;
 
-    const statusEl = document.getElementById(`status-badge-${dev.id}`);
+    const statusEl = document.getElementById(`status-badge-${Html.safeId(dev.id)}`);
     if (statusEl && window.KpiBar) {
       statusEl.innerHTML = window.KpiBar.getStatusBadgeHtml(t.status);
     }
 
-    const faultsEl = document.getElementById(`faults-${dev.id}`);
+    const faultsEl = document.getElementById(`faults-${Html.safeId(dev.id)}`);
     if (faultsEl && window.KpiBar) {
       faultsEl.innerHTML = window.KpiBar.renderFaultBadgesHtml(t.fault_code);
     }
 
-    const dmFiltEl = document.getElementById(`metric-dm-filt-${dev.id}`);
+    const dmFiltEl = document.getElementById(`metric-dm-filt-${Html.safeId(dev.id)}`);
     if (dmFiltEl) {
-      dmFiltEl.textContent = t.d_m_filtered.toFixed(2);
+      dmFiltEl.textContent = this._safeNum(t.d_m_filtered, 2);
       dmFiltEl.className = `mt-0.5 font-mono text-base sm:text-lg font-bold ${isAlarm ? 'text-status-alarm' : 'text-accent'}`;
     }
 
-    const dmRawEl = document.getElementById(`metric-dm-raw-${dev.id}`);
-    if (dmRawEl) dmRawEl.textContent = t.d_m.toFixed(2);
+    const dmRawEl = document.getElementById(`metric-dm-raw-${Html.safeId(dev.id)}`);
+    if (dmRawEl) dmRawEl.textContent = this._safeNum(t.d_m, 2);
 
-    const rmsEl = document.getElementById(`metric-rms-${dev.id}`);
-    if (rmsEl) rmsEl.innerHTML = `${t.rms.toFixed(3)} <span class="text-xs text-text-muted">g</span>`;
+    const rmsEl = document.getElementById(`metric-rms-${Html.safeId(dev.id)}`);
+    if (rmsEl) rmsEl.innerHTML = `${this._safeNum(t.rms, 3)} <span class="text-xs text-text-muted">g</span>`;
 
-    const thrEl = document.getElementById(`metric-thr-${dev.id}`);
-    if (thrEl) thrEl.innerHTML = `${dev.threshold.toFixed(1)} <span class="text-text-muted">/</span> ${dev.nominal_rpm}`;
+    const thrEl = document.getElementById(`metric-thr-${Html.safeId(dev.id)}`);
+    if (thrEl) thrEl.innerHTML = `${this._safeNum(dev.threshold, 1)} <span class="text-text-muted">/</span> ${Html.escape(dev.nominal_rpm)}`;
 
-    const tsEl = document.getElementById(`ts-${dev.id}`);
+    const tsEl = document.getElementById(`ts-${Html.safeId(dev.id)}`);
     if (tsEl) tsEl.textContent = `Обновлено: ${Html.formatTime(t.ts)}`;
 
-    const canvas = document.getElementById(`canvas-${dev.id}`);
+    const canvas = document.getElementById(`canvas-${Html.safeId(dev.id)}`);
     if (canvas && window.TelemetryChartRenderer) {
       window.TelemetryChartRenderer.draw(canvas, dev, hoverIndex);
     }
@@ -210,7 +224,7 @@ const DeviceCard = {
   bind(card, dev, handlers = {}) {
     if (!card) return;
 
-    const canvas = document.getElementById(`canvas-${dev.id}`);
+    const canvas = document.getElementById(`canvas-${Html.safeId(dev.id)}`);
     if (canvas) {
       // Первичная отрисовка
       if (window.TelemetryChartRenderer) {
@@ -237,12 +251,12 @@ const DeviceCard = {
       });
     }
 
-    const btnSettings = document.getElementById(`btn-settings-${dev.id}`);
+    const btnSettings = document.getElementById(`btn-settings-${Html.safeId(dev.id)}`);
     if (btnSettings && handlers.onSettings) {
       btnSettings.addEventListener('click', () => handlers.onSettings(dev.id));
     }
 
-    const btnDetails = document.getElementById(`btn-details-${dev.id}`);
+    const btnDetails = document.getElementById(`btn-details-${Html.safeId(dev.id)}`);
     if (btnDetails && handlers.onDetails) {
       btnDetails.addEventListener('click', () => handlers.onDetails(dev.id));
     }
