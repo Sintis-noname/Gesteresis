@@ -26,7 +26,31 @@ const Html = {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/`/g, '&#96;');
+  },
+
+  /** Безопасный href: пропускает только http(s), mailto, tel, / и # */
+  safeUrl(url) {
+    const s = String(url ?? '').trim();
+    // Разрешаем только относительные и явно безопасные схемы
+    if (/^(https?:|mailto:|tel:|\/|#)/i.test(s)) {
+      // экранируем кавычки в атрибуте
+      return this.escape(s);
+    }
+    return '#'; // всё остальное (javascript:, data:, vbscript:) — в блок
+  },
+
+  /**
+   * Безопасный id для HTML-атрибута id и getElementById.
+   * Разрешает только [a-zA-Z0-9_-], всё остальное → '_'.
+   * Гарантирует, что значение в атрибуте и в getElementById совпадает.
+   * @param {*} str
+   * @returns {string}
+   */
+  safeId(str) {
+    return String(str ?? '').replace(/[^a-zA-Z0-9_-]/g, '_');
   },
 
   /**
@@ -78,19 +102,18 @@ const Html = {
    * @returns {Date|null}
    */
   _toDate(value) {
-    if (value instanceof Date) return isNaN(value) ? null : value;
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
 
     if (typeof value === 'number') {
-      // Telemetry.ts приходит в секундах (10 знаков), Date.now() — в мс (13 знаков).
-      // Порог 1e12 (2001-09-09 в мс) отделяет одно от другого.
+      if (!Number.isFinite(value) || value <= 0) return null;
       const ms = value < 1e12 ? value * 1000 : value;
       const d = new Date(ms);
-      return isNaN(d) ? null : d;
+      return Number.isNaN(d.getTime()) ? null : d;
     }
 
     if (typeof value === 'string') {
       const d = new Date(value);
-      return isNaN(d) ? null : d;
+      return Number.isNaN(d.getTime()) ? null : d;
     }
 
     return null;
