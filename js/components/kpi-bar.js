@@ -32,7 +32,8 @@ const KpiBar = {
    * @param {Array<Object>} devices — массив устройств из state
    */
   update(devices) {
-    const total = devices.length;
+    const list = Array.isArray(devices) ? devices : [];
+    const total = list.length;
     const ok = devices.filter(
       d => d.telemetry.status === 'OK' && d.telemetry.fault_code === 0
     ).length;
@@ -113,9 +114,12 @@ const KpiBar = {
     }
 
     return faults.map(f => {
-      const hex = '0x' + f.mask.toString(16).padStart(4, '0').toUpperCase();
+      const mask = Number(f.mask);
+      const hex = Number.isFinite(mask)
+        ? '0x' + mask.toString(16).padStart(4, '0').toUpperCase()
+        : '0x????';
       return `
-        <span title="${Html.escape(f.label)}" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-status-warn/15 text-status-warn border border-status-warn/40">
+        <span title="${Html.escape(f.label)}" class="...">
           ⚠ ${hex} ${Html.escape(f.name)}
         </span>
       `;
